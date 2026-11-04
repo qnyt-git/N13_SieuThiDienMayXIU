@@ -16,6 +16,8 @@ public class NhanVien {
 	  
 	    private boolean trangThai; //mặc định khi thêm nhân viên - trạng thái là "đang làm việc"
 	    							// khi nào chỉnh sửa nhân viên mới là "đang làm việc"/"nghỉ"
+	    
+	    public NhanVien() {}
 
 		public NhanVien(String maNhanVien, String hoTenNhanVien, boolean gioiTinh, String soDienThoai,
 				LocalDate ngaySinh, String trinhDoHocVan, String chucVu, float heSoLuong, int luongCoBan,

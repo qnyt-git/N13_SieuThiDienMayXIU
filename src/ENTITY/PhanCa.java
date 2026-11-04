@@ -11,6 +11,9 @@ public class PhanCa {
 	    private CaLamViec maCa;
 	    private LocalDate ngayLam;
 	    private TrangThaiPhanCa trangThai;		// "đã phân ca" / "đã làm" / "Nghỉ"
+	    
+	    public PhanCa() {}
+	    
 		public PhanCa(String maPhanCa, NhanVien maNhanVien, CaLamViec maCa, LocalDate ngayLam,
 				TrangThaiPhanCa trangThai) {
 			super();

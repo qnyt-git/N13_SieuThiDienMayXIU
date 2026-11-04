@@ -11,7 +11,10 @@ public class SanPham {
 	private int soLuongTon;
 	private String thoiHanBaoHanh; // 1 năm/12 tháng; 2 năm......
 	private String moTaSanPham;
-	private TrangThaiSanPham trangThai; // đang bán/hết hàng/tạm ngưng
+	private TrangThaiSanPham trangThai; // sản phẩm mới/đang bán/hết hàng/tạm ngưng
+	
+	public SanPham() {}
+	
 	public SanPham(String maSanPham, String tenSanPham, NhaCungCap maNCC, double giaBan, int soLuongTon,
 			String thoiHanBaoHanh, String moTaSanPham, TrangThaiSanPham trangThai) {
 		super();

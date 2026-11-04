@@ -7,6 +7,9 @@ public class CaLamViec {
     private String tenCa;
     private LocalDateTime gioBatDau;
     private LocalDateTime gioKetThuc;
+    
+    public CaLamViec() {}
+    
 	public CaLamViec(String maCa, String tenCa, LocalDateTime gioBatDau, LocalDateTime gioKetThuc) {
 		super();
 		this.maCa = maCa;

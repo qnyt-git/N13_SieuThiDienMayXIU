@@ -9,6 +9,9 @@ public class NhaCungCap {
     private String soDienThoai;		
     private String email;
     private boolean trangThai; 		// còn hợp tác - tạm dừng
+    
+    public NhaCungCap() {}
+    
 	public NhaCungCap(String maNCC, String tenNCC, String tenThuongHieu, String diaChi, String soDienThoai,
 			String email, boolean trangThai) {
 		super();

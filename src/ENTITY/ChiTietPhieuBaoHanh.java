@@ -5,6 +5,9 @@ public class ChiTietPhieuBaoHanh {
 	private SanPham maSanPham;
 	private String tinhTrangSanPham; 
 	private String noiDungBaoHanh;
+	
+	public ChiTietPhieuBaoHanh() {}
+	
 	public ChiTietPhieuBaoHanh(PhieuBaoHanh maPhieuBaoHanh, SanPham maSanPham, String tinhTrangSanPham,
 			String noiDungBaoHanh) {
 		super();

@@ -1,6 +1,5 @@
 package ENTITY;
 
-import ENUM.LoaiQuyen;
 
 public class TaiKhoanNhanVien {
 
@@ -8,10 +7,16 @@ public class TaiKhoanNhanVien {
     private String tenDangNhap;		// 
     private NhanVien maNhanVien;	// 	
     private String matKhau;			// phải ẩn/hiện được mật khẩu
-    private LoaiQuyen loaiQuyen; 	// có thể thêm/xóa/sửa loại quyền
+    
+    private String loaiQuyen; 		// có thể thêm/xóa/sửa loại quyền nên phải để String
+    								// các quyền có sẵn QUAN_LY; BAN_HANG; KE_TOAN 
+    
     private boolean trangThai; 		//hoạt động - vô hiệu hóa
+    
+    public TaiKhoanNhanVien() {}
+    
 	public TaiKhoanNhanVien(String maTaiKhoan, String tenDangNhap, NhanVien maNhanVien, String matKhau,
-			LoaiQuyen loaiQuyen, boolean trangThai) {
+			String loaiQuyen, boolean trangThai) {
 		super();
 		this.maTaiKhoan = maTaiKhoan;
 		this.tenDangNhap = tenDangNhap;
@@ -44,10 +49,10 @@ public class TaiKhoanNhanVien {
 	public void setMatKhau(String matKhau) {
 		this.matKhau = matKhau;
 	}
-	public LoaiQuyen getLoaiQuyen() {
+	public String getLoaiQuyen() {
 		return loaiQuyen;
 	}
-	public void setLoaiQuyen(LoaiQuyen loaiQuyen) {
+	public void setLoaiQuyen(String loaiQuyen) {
 		this.loaiQuyen = loaiQuyen;
 	}
 	public boolean isTrangThai() {

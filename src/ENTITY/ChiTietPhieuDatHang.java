@@ -6,6 +6,9 @@ public class ChiTietPhieuDatHang {
 	private SanPham maSanPham;
 	private int soLuong;
 	private double donGia;
+	
+	public ChiTietPhieuDatHang() {}
+	
 	public ChiTietPhieuDatHang(PhieuDatHang maPhieuDatHang, SanPham maSanPham, int soLuong, double donGia) {
 		super();
 		this.maPhieuDatHang = maPhieuDatHang;

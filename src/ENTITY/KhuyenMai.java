@@ -14,6 +14,8 @@ public class KhuyenMai {
     private double giaTriGiam;					// giá trị giảm: 1.000.000; 10%;.....
     private boolean trangThai;					// "đang diễn ra" / "đã kết thúc"
     
+    public KhuyenMai() {}
+    
 	public KhuyenMai(String maKhuyenMai, String tenKhuyenMai, LocalDateTime thoiGianBatDau,
 			LocalDateTime thoiGianKetThuc, double giaTriGiam, boolean trangThai) {
 		super();

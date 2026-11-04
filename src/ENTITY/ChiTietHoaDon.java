@@ -6,7 +6,14 @@ public class ChiTietHoaDon {
     private SanPham maSanPham;
     private int soLuong;
     private double donGia;
-    private float thueVAT;			// Thuế VAT: lấy chung 0.08 (8%)
+    private float thueVAT;  	// thuế này có thể chỉnh sửa trong tương lai
+    							// khi chỉnh sửa thì thuế nhập vào ví dụ 23 thì sẽ đổi thành 0.23 (tại vì là %)
+    							// khi nhập hóa đơn thuế được định sẵn dưới hóa đơn là 10% hay 8% gì đó
+    							// không nhập thủ công thuế
+    
+    public ChiTietHoaDon() {}
+    							
+    						 
 	public ChiTietHoaDon(HoaDon maHoaDon, SanPham maSanPham, int soLuong, double donGia, float thueVAT) {
 		super();
 		this.maHoaDon = maHoaDon;

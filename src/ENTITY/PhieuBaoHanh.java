@@ -12,7 +12,9 @@ public class PhieuBaoHanh {
 	    private LocalDateTime ngayHenTra;			// ngày hẹn khách đến lấy hàng (ngày lấy có thể sớm hơn dự kiến chứ không được trễ hơn)
 	    private String lyDoHuy;        				// Lý do hủy phiếu (dùng khi khách từ chối phí hoặc hủy ngang)		
 	    
-	    private TrangThaiPhieuBaoHanh trangThai;
+	    private TrangThaiPhieuBaoHanh trangThai;	// đọc luồng trong ENUM
+	    
+	    public PhieuBaoHanh() {}
 
 		public PhieuBaoHanh(String maPhieubaoHanh, KhachHang maKhachHang, NhanVien maNhanVien,
 				LocalDateTime ngayTiepNhan, LocalDateTime ngayHenTra, String lyDoHuy, TrangThaiPhieuBaoHanh trangThai) {

@@ -17,6 +17,8 @@ public class PhieuDatHang {
 													// khi thanh tóan hóa đơn, trạng thái chuyển sang "đã thanh toán"
     												// khi muốn hủy phiếu đựat - chọn chức năng hủy phiếu và trạng thái phiếu "Đã hủy"
 
+    public PhieuDatHang() {}
+    
 	public PhieuDatHang(String maPhieuDatHang, KhachHang maKhachHang, NhanVien maNhanVien, LocalDateTime ngayDatHang,
 			String ghiChu, TrangThaiPhieuDatHang trangThai) {
 		super();

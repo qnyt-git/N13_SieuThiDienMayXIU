@@ -10,6 +10,7 @@ public class KhachHang {
     
     private String LoaiKH; 			// Khách mới / Khách vip
     								// sử dụng String để có thể thêm/xóa/sửa nhiều loại khách hàng khác
+    public KhachHang() {}
 
 	public KhachHang(String maKhachHang, String hoTenKhachHang, boolean gioiTinh, String soDienThoai, int diemTichLuy,
 			String loaiKH) {

@@ -3,6 +3,7 @@ package ENTITY;
 import java.time.LocalDateTime;
 
 import ENUM.PhuongThucThanhToan;
+import ENUM.TrangThaiHoaDon;
 
 public class HoaDon {
 	
@@ -16,12 +17,13 @@ public class HoaDon {
     private LocalDateTime ngayLap;						// ngày lập hóa đơn
     private String ghiChu;
     
-    private boolean trangThai;							// khi lập hóa đơn: trạng thái mặc định là "Chờ xử lý (chờ thanh toán)"
+    private TrangThaiHoaDon trangThai;					// khi lập hóa đơn: trạng thái mặc định là "Chờ xử lý (chờ thanh toán)"
     													// khi thanh tóan hóa đơn, trạng thái chuyển sang "đã thanh toán"
-
+    public HoaDon() {}
+    
 	public HoaDon(String maHoaDon, PhieuDatHang maPhieuDatHang, KhachHang maKhachHang, NhanVien maNhanVien,
 			NhaCungCap maNCC, KhuyenMai maKhuyenMai, PhuongThucThanhToan phuongThucThanhToan, LocalDateTime ngayLap,
-			String ghiChu, boolean trangThai) {
+			String ghiChu, TrangThaiHoaDon trangThai) {
 		super();
 		this.maHoaDon = maHoaDon;
 		this.maPhieuDatHang = maPhieuDatHang;
@@ -34,87 +36,66 @@ public class HoaDon {
 		this.ghiChu = ghiChu;
 		this.trangThai = trangThai;
 	}
-
 	public String getMaHoaDon() {
 		return maHoaDon;
 	}
-
 	public void setMaHoaDon(String maHoaDon) {
 		this.maHoaDon = maHoaDon;
 	}
-
 	public PhieuDatHang getMaPhieuDatHang() {
 		return maPhieuDatHang;
 	}
-
 	public void setMaPhieuDatHang(PhieuDatHang maPhieuDatHang) {
 		this.maPhieuDatHang = maPhieuDatHang;
 	}
-
 	public KhachHang getMaKhachHang() {
 		return maKhachHang;
 	}
-
 	public void setMaKhachHang(KhachHang maKhachHang) {
 		this.maKhachHang = maKhachHang;
 	}
-
 	public NhanVien getMaNhanVien() {
 		return maNhanVien;
 	}
-
 	public void setMaNhanVien(NhanVien maNhanVien) {
 		this.maNhanVien = maNhanVien;
 	}
-
 	public NhaCungCap getMaNCC() {
 		return maNCC;
 	}
-
 	public void setMaNCC(NhaCungCap maNCC) {
 		this.maNCC = maNCC;
 	}
-
 	public KhuyenMai getMaKhuyenMai() {
 		return maKhuyenMai;
 	}
-
 	public void setMaKhuyenMai(KhuyenMai maKhuyenMai) {
 		this.maKhuyenMai = maKhuyenMai;
 	}
-
 	public PhuongThucThanhToan getPhuongThucThanhToan() {
 		return phuongThucThanhToan;
 	}
-
 	public void setPhuongThucThanhToan(PhuongThucThanhToan phuongThucThanhToan) {
 		this.phuongThucThanhToan = phuongThucThanhToan;
 	}
-
 	public LocalDateTime getNgayLap() {
 		return ngayLap;
 	}
-
 	public void setNgayLap(LocalDateTime ngayLap) {
 		this.ngayLap = ngayLap;
 	}
-
 	public String getGhiChu() {
 		return ghiChu;
 	}
-
 	public void setGhiChu(String ghiChu) {
 		this.ghiChu = ghiChu;
 	}
-
-	public boolean isTrangThai() {
+	public TrangThaiHoaDon getTrangThai() {
 		return trangThai;
 	}
-
-	public void setTrangThai(boolean trangThai) {
+	public void setTrangThai(TrangThaiHoaDon trangThai) {
 		this.trangThai = trangThai;
 	}
-
 	@Override
 	public String toString() {
 		return "HoaDon [maHoaDon=" + maHoaDon + ", maPhieuDatHang=" + maPhieuDatHang + ", maKhachHang=" + maKhachHang
@@ -122,8 +103,14 @@ public class HoaDon {
 				+ ", phuongThucThanhToan=" + phuongThucThanhToan + ", ngayLap=" + ngayLap + ", ghiChu=" + ghiChu
 				+ ", trangThai=" + trangThai + "]";
 	}
-    
-    
-    
+
+
+
+
+
+
+
+
+
 
 }
