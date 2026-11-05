@@ -1,7 +1,10 @@
 package GUI;
 
+import DAO.TaiKhoanNhanVienDAO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class LoginGUI extends JFrame {
     private JTextField txtTaiKhoan;
@@ -104,23 +107,27 @@ public class LoginGUI extends JFrame {
         box3.add(Box.createRigidArea(new Dimension(0, 5)));
         box3.add(txtMatKhau);
 
-        // --- BOX 4: Checkbox hiện mật khẩu (Căn sát trái) ---
+        // --- BOX 4: Checkbox hiện mật khẩu (Dùng ActionListener truyền thống) ---
         Box box4 = Box.createVerticalBox();
         box4.setAlignmentX(Component.LEFT_ALIGNMENT);
         chkHienMatKhau = new JCheckBox("Hiện mật khẩu");
         chkHienMatKhau.setBackground(Color.WHITE);
         chkHienMatKhau.setFont(new Font("Arial", Font.PLAIN, 12));
         chkHienMatKhau.setAlignmentX(Component.LEFT_ALIGNMENT);
-        chkHienMatKhau.addActionListener(e -> {
-            if (chkHienMatKhau.isSelected()) {
-                txtMatKhau.setEchoChar((char) 0); // Hiện mật khẩu
-            } else {
-                txtMatKhau.setEchoChar('•'); // Ẩn mật khẩu dạng dấu chấm
+        
+        chkHienMatKhau.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (chkHienMatKhau.isSelected()) {
+                    txtMatKhau.setEchoChar((char) 0); // Hiện mật khẩu
+                } else {
+                    txtMatKhau.setEchoChar('•'); // Ẩn mật khẩu dạng dấu chấm
+                }
             }
         });
         box4.add(chkHienMatKhau);
 
-        // --- BOX 5: Nút Đăng nhập ---
+        // --- BOX 5: Nút Đăng nhập (Dùng ActionListener truyền thống) ---
         Box box5 = Box.createVerticalBox();
         box5.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnDangNhap = new JButton("Đăng nhập");
@@ -130,6 +137,42 @@ public class LoginGUI extends JFrame {
         btnDangNhap.setForeground(Color.WHITE);
         btnDangNhap.setFont(new Font("Arial", Font.BOLD, 14));
         btnDangNhap.setFocusPainted(false);
+        
+        btnDangNhap.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String tenDangNhap = txtTaiKhoan.getText().trim();
+                String matKhau = new String(txtMatKhau.getPassword()).trim();
+
+                // Kiểm tra rỗng
+                if (tenDangNhap.isEmpty() || matKhau.isEmpty()) {
+                    JOptionPane.showMessageDialog(LoginGUI.this, "Vui lòng nhập đầy đủ tài khoản và mật khẩu!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Gọi DAO kiểm tra dữ liệu từ cơ sở dữ liệu SQL Server
+                TaiKhoanNhanVienDAO dao = new TaiKhoanNhanVienDAO();
+                String[] thongTin = dao.kiemTraDangNhap(tenDangNhap, matKhau);
+
+                if (thongTin != null) {
+                    // Đăng nhập thành công -> Đóng form đăng nhập, chuyển thẳng qua TrangChuGUI
+                    dispose();
+                    
+                    String hoTenNhanVien = thongTin[0];
+                    String quyen = thongTin[1];
+                    
+                    // Khởi tạo trang chủ và truyền thông tin thực tế từ database vào
+                    new TrangChuGUI(hoTenNhanVien, quyen).setVisible(true);
+                    
+                } else {
+                    // Đăng nhập thất bại (Sai tài khoản, mật khẩu hoặc tài khoản bị khóa)
+                    JOptionPane.showMessageDialog(LoginGUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                    txtTaiKhoan.requestFocus();
+                    txtTaiKhoan.selectAll();
+                }
+            }
+        });
+        
         box5.add(btnDangNhap);
 
         // --- BOX 6: Nút Quên mật khẩu ---
@@ -164,12 +207,5 @@ public class LoginGUI extends JFrame {
         // Gắn 2 panel chính vào cửa sổ JFrame
         add(panelTrai);
         add(panelPhai);
-    }
-
-    // Hàm main chạy thử trực tiếp
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new LoginGUI().setVisible(true);
-        });
     }
 }
