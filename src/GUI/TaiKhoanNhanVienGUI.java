@@ -32,8 +32,8 @@ public class TaiKhoanNhanVienGUI extends JPanel {
         txtMaTK = new JTextField(); txtMaTK.setEnabled(false);
         txtTenDangNhap = new JTextField();
         txtMatKhau = new JPasswordField();
-        cboLoaiQuyen = new JComboBox<>(new String[]{"QUAN_LY", "BAN_HANG", "CSKH", "KHO"});
-        cboTrangThai = new JComboBox<>(new String[]{"Hoạt động", "Tạm khóa"});
+        cboLoaiQuyen = new JComboBox<>();
+        cboTrangThai = new JComboBox<>();
         cboNhanVien = new JComboBox<>();
 
         panelForm.add(new JLabel("Mã tài khoản (tự động):")); panelForm.add(txtMaTK);
