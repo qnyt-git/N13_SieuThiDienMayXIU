@@ -16,11 +16,7 @@
 	import java.util.List;
 	import java.util.Map;
 	
-	/**
-	 * DAO của PhanCa.
-	 * Bao gồm các thao tác CSDL (insert, update, delete, getAll, taoMaMoi)
-	 * và toàn bộ các phương thức xử lý nghiệp vụ, kiểm tra trùng lặp lịch phân ca được chuyển từ Entity qua.
-	 */
+	
 	public class PhanCaDAO implements IDAO<PhanCa> {
 	
 	    private static TrangThaiPhanCa docTrangThai(String s) {
