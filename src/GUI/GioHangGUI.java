@@ -12,7 +12,7 @@ public class GioHangGUI extends JPanel {
     private JLabel lblTongTien, lblGiamGia, lblThanhTien;
     private JButton btnThemGio, btnXoaDong, btnXoaHet, btnXacNhan;
 
-    // laThanhToan = true (Tab Bán hàng & thanh toán), false (Tab Lập phiếu đặt hàng)
+    
     public GioHangGUI(boolean laThanhToan) {
         setLayout(new GridLayout(1, 2, 12, 0));
         setBackground(new Color(235, 240, 245));
@@ -32,8 +32,14 @@ public class GioHangGUI extends JPanel {
         panelTim.add(new JLabel("Tìm sản phẩm:"));
         panelTim.add(txtTimSp);
 
-        tblSanPham = new JTable(new DefaultTableModel(
-            new Object[]{"Mã SP", "Tên sản phẩm", "Giá bán", "Tồn"}, 0));
+        DefaultTableModel modelSp = new DefaultTableModel(
+            new Object[]{"Mã SP", "Tên sản phẩm", "Giá bán", "Tồn"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tblSanPham = new JTable(modelSp);
         tblSanPham.setRowHeight(28);
 
         JPanel panelThem = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -62,8 +68,14 @@ public class GioHangGUI extends JPanel {
             BorderFactory.createEmptyBorder(12, 12, 12, 12)
         ));
 
-        tblGioHang = new JTable(new DefaultTableModel(
-            new Object[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0));
+        DefaultTableModel modelGio = new DefaultTableModel(
+            new Object[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tblGioHang = new JTable(modelGio);
         tblGioHang.setRowHeight(28);
 
         JPanel panelDuoi = new JPanel(new BorderLayout(0, 8));
@@ -79,19 +91,33 @@ public class GioHangGUI extends JPanel {
         JPanel panelForm = new JPanel(new GridLayout(4, 2, 8, 6));
         panelForm.setBackground(Color.WHITE);
         cboKhachHang = new JComboBox<>();
-        cboKhuyenMai = new JComboBox<>(new String[]{"Không áp dụng"});
-        panelForm.add(new JLabel("Khách hàng *:")); panelForm.add(cboKhachHang);
-        panelForm.add(new JLabel("Khuyến mãi:")); panelForm.add(cboKhuyenMai);
+        panelForm.add(new JLabel("Khách hàng *:"));
+        panelForm.add(cboKhachHang);
 
         if (laThanhToan) {
+            cboKhuyenMai = new JComboBox<>(new String[]{"Không áp dụng"});
             cboPhieuDat = new JComboBox<>(new String[]{"(Bán trực tiếp)"});
-            cboPhuongThuc = new JComboBox<>(new String[]{"TIEN_MAT", "CHUYEN_KHOAN", "THE"});
-            panelForm.add(new JLabel("Phiếu đặt hàng:")); panelForm.add(cboPhieuDat);
-            panelForm.add(new JLabel("Thanh toán bằng:")); panelForm.add(cboPhuongThuc);
+            cboPhuongThuc = new JComboBox<>(new String[]{
+                "Tiền mặt",
+                "Chuyển khoản ngân hàng",
+                "Thẻ ngân hàng (ATM/Visa/Master)",
+                "Ví điện tử (MoMo/ShopeePay)"
+            });
+            panelForm.add(new JLabel("Khuyến mãi:"));
+            panelForm.add(cboKhuyenMai);
+            panelForm.add(new JLabel("Phiếu đặt hàng:"));
+            panelForm.add(cboPhieuDat);
+            panelForm.add(new JLabel("Thanh toán bằng:"));
+            panelForm.add(cboPhuongThuc);
         } else {
             txtGhiChu = new JTextField();
-            panelForm.add(new JLabel("Ghi chú:")); panelForm.add(txtGhiChu);
-            panelForm.add(new JLabel("")); panelForm.add(new JLabel(""));
+            panelForm.add(new JLabel("Ghi chú:"));
+            panelForm.add(txtGhiChu);
+            
+            panelForm.add(new JLabel(""));
+            panelForm.add(new JLabel(""));
+            panelForm.add(new JLabel(""));
+            panelForm.add(new JLabel(""));
         }
 
         JPanel panelTong = new JPanel(new GridLayout(3, 2, 8, 4));
@@ -101,9 +127,16 @@ public class GioHangGUI extends JPanel {
         lblThanhTien = new JLabel("0 đ", SwingConstants.RIGHT);
         lblThanhTien.setFont(new Font("Arial", Font.BOLD, 18));
         lblThanhTien.setForeground(new Color(14, 98, 195));
-        panelTong.add(new JLabel("Tổng tiền:")); panelTong.add(lblTongTien);
-        panelTong.add(new JLabel("Giảm giá:")); panelTong.add(lblGiamGia);
-        panelTong.add(new JLabel("Thành tiền:")); panelTong.add(lblThanhTien);
+
+        if (laThanhToan) {
+            panelTong.add(new JLabel("Tổng tiền:")); panelTong.add(lblTongTien);
+            panelTong.add(new JLabel("Giảm giá:")); panelTong.add(lblGiamGia);
+            panelTong.add(new JLabel("Thành tiền:")); panelTong.add(lblThanhTien);
+        } else {
+            panelTong.add(new JLabel("")); panelTong.add(new JLabel(""));
+            panelTong.add(new JLabel("")); panelTong.add(new JLabel(""));
+            panelTong.add(new JLabel("Tổng tiền:")); panelTong.add(lblThanhTien);
+        }
 
         JPanel panelGiua = new JPanel(new BorderLayout(16, 0));
         panelGiua.setBackground(Color.WHITE);
