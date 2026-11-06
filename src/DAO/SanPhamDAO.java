@@ -14,11 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DAO của SanPham.
- * Tuân thủ tuyệt đối mô hình 3 lớp: Giữ nguyên 100% Entity, đưa toàn bộ thao tác CSDL, 
- * quản lý tồn kho và các phương thức xử lý nghiệp vụ sang DAO.
- */
+
 public class SanPhamDAO implements IDAO<SanPham> {
 
     private static TrangThaiSanPham docTrangThai(String s) {
