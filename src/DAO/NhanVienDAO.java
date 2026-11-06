@@ -8,10 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO của NhanVien. Cột gioiTinh, trinhDoHocVan chưa có trong entity nên thêm mới để NULL,
- * khi sửa thì không đụng tới hai cột này.
- */
+
 public class NhanVienDAO implements IDAO<NhanVien> {
 
     private static NhanVien mapNhanVien(ResultSet rs) throws SQLException {
