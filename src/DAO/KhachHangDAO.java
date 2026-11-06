@@ -9,10 +9,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO của KhachHang.
- * Thực hiện các thao tác CRUD và xử lý nghiệp vụ liên quan đến khách hàng.
- */
+
 public class KhachHangDAO implements IDAO<KhachHang> {
 
     @Override
