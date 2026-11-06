@@ -4,8 +4,6 @@ package GUI;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import ENTITY.NhanVien;
 
@@ -49,7 +47,8 @@ public class TrangChuGUI extends JFrame {
         taoThanhTrangThai();
     }
 
-    // Tao menu
+    // ================= 1. MENU BAR =================
+
     private JMenu taoMenu(String ten) {
         JMenu menu = new JMenu(ten);
         menu.setForeground(Color.WHITE);
@@ -63,11 +62,8 @@ public class TrangChuGUI extends JFrame {
         JMenuItem item = new JMenuItem(ten);
         menu.add(item);
 
-        item.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                chuyenManHinh(card, tieuDe);
-            }
+        item.addActionListener(e -> {
+            chuyenManHinh(card, tieuDe);
         });
 
         return item;
@@ -85,7 +81,7 @@ public class TrangChuGUI extends JFrame {
         JMenuBar bar = new JMenuBar();
         bar.setBackground(new Color(12, 68, 136));
 
-        // Menu he thong
+        // Menu He thong
         JMenu mnuHeThong = taoMenu("Hệ thống");
 
         JMenuItem doiMatKhau = new JMenuItem("Đổi mật khẩu");
@@ -100,7 +96,7 @@ public class TrangChuGUI extends JFrame {
         dangXuat.addActionListener(e -> xuLyDangXuat());
         thoat.addActionListener(e -> xuLyThoat());
 
-        // Menu danh muc
+        // Menu Danh muc
         JMenu mnuDanhMuc = taoMenu("Danh mục");
 
         taoItem(mnuDanhMuc, "Nhân viên",
@@ -124,13 +120,25 @@ public class TrangChuGUI extends JFrame {
         taoItem(mnuDanhMuc, "Khuyến mãi",
                 "KHUYEN_MAI", "Quản lý khuyến mãi");
 
-        // Menu cap nhat
+        // Menu Cap nhat
         JMenu mnuCapNhat = taoMenu("Cập nhật");
 
         taoItem(mnuCapNhat, "Chức vụ",
                 "CHUC_VU", "Quản lý chức vụ");
 
-        // Menu xu ly
+        // Menu Tim kiem
+        JMenu mnuTimKiem = taoMenu("Tìm kiếm");
+
+        taoItem(mnuTimKiem, "Tìm kiếm sản phẩm",
+                "TIM_KIEM_SAN_PHAM", "Tìm kiếm sản phẩm");
+
+        taoItem(mnuTimKiem, "Lịch sử mua hàng",
+                "LICH_SU_MUA_HANG", "Lịch sử mua hàng");
+
+        taoItem(mnuTimKiem, "Lịch làm việc",
+                "LICH_LAM_VIEC", "Lịch làm việc");
+
+        // Menu Xu ly
         JMenu mnuXuLy = taoMenu("Xử lý");
 
         taoItem(mnuXuLy, "Bán hàng & thanh toán",
@@ -145,36 +153,25 @@ public class TrangChuGUI extends JFrame {
         taoItem(mnuXuLy, "Phân ca",
                 "PHAN_CA", "Quản lý phân ca");
 
-        // Menu tim kiem
-        JMenu mnuTimKiem = taoMenu("Tìm kiếm");
-
-        taoItem(mnuTimKiem, "Tìm kiếm sản phẩm",
-                "TIM_KIEM_SAN_PHAM", "Tìm kiếm sản phẩm");
-
-        taoItem(mnuTimKiem, "Lịch sử mua hàng",
-                "LICH_SU_MUA_HANG", "Lịch sử mua hàng");
-
-        taoItem(mnuTimKiem, "Lịch làm việc",
-                "LICH_LAM_VIEC", "Lịch làm việc");
-
-        // Menu bao bieu
+        // Menu Bao bieu
         JMenu mnuBaoBieu = taoMenu("Báo biểu");
 
         taoItem(mnuBaoBieu, "Thống kê tổng hợp",
                 "THONG_KE", "Thống kê tổng hợp");
 
-        // Them menu vao thanh menu
+        // Them menu theo dung thu tu giao dien
         bar.add(mnuHeThong);
         bar.add(mnuDanhMuc);
         bar.add(mnuCapNhat);
-        bar.add(mnuXuLy);
         bar.add(mnuTimKiem);
+        bar.add(mnuXuLy);
         bar.add(mnuBaoBieu);
 
         setJMenuBar(bar);
     }
 
-    // Xu ly dang xuat
+    // ================= 2. XU LY HE THONG =================
+
     private void xuLyDangXuat() {
 
         int chon = JOptionPane.showConfirmDialog(
@@ -190,7 +187,6 @@ public class TrangChuGUI extends JFrame {
         }
     }
 
-    // Xu ly thoat chuong trinh
     private void xuLyThoat() {
 
         int chon = JOptionPane.showConfirmDialog(
@@ -205,10 +201,12 @@ public class TrangChuGUI extends JFrame {
         }
     }
 
-    // Tao header
+    // ================= 3. HEADER =================
+
     private void taoHeader() {
 
         JPanel header = new JPanel(new BorderLayout());
+
         header.setBackground(Color.WHITE);
 
         header.setBorder(BorderFactory.createMatteBorder(
@@ -218,10 +216,11 @@ public class TrangChuGUI extends JFrame {
 
         header.setPreferredSize(new Dimension(getWidth(), 45));
 
-        // Phan ben trai
+        // Ben trai
         JPanel trai = new JPanel(
                 new FlowLayout(FlowLayout.LEFT, 15, 10)
         );
+
         trai.setOpaque(false);
 
         JLabel logo = new JLabel("XIU");
@@ -235,14 +234,16 @@ public class TrangChuGUI extends JFrame {
         trai.add(logo);
         trai.add(lblTieuDeTrang);
 
-        // Phan ben phai
+        // Ben phai
         JLabel user = new JLabel(tenNhanVien + " | " + chucVu);
+
         user.setFont(new Font("Arial", Font.BOLD, 13));
         user.setForeground(new Color(12, 68, 136));
 
         JPanel phai = new JPanel(
                 new FlowLayout(FlowLayout.RIGHT, 15, 12)
         );
+
         phai.setOpaque(false);
         phai.add(user);
 
@@ -252,7 +253,8 @@ public class TrangChuGUI extends JFrame {
         add(header, BorderLayout.NORTH);
     }
 
-    // Tao cac man hinh
+    // ================= 4. NOI DUNG CHINH =================
+
     private void taoNoiDung() {
 
         cardLayout = new CardLayout();
@@ -261,7 +263,10 @@ public class TrangChuGUI extends JFrame {
         panelNoiDung.setBackground(new Color(240, 243, 246));
 
         // Trang chu
-        panelNoiDung.add(taoManHinhTrangChu(), "TRANG_CHU");
+        panelNoiDung.add(
+                taoManHinhTrangChu(),
+                "TRANG_CHU"
+        );
 
         // Danh muc
         panelNoiDung.add(new NhanVienGUI(), "NHAN_VIEN");
@@ -302,22 +307,30 @@ public class TrangChuGUI extends JFrame {
         );
 
         // Bao bieu
-        panelNoiDung.add(new ThongKeGUI(), "THONG_KE");
+        panelNoiDung.add(
+                new ThongKeGUI(),
+                "THONG_KE"
+        );
 
         add(panelNoiDung, BorderLayout.CENTER);
 
         cardLayout.show(panelNoiDung, "TRANG_CHU");
     }
 
-    // Tao giao dien trang chu
+    // ================= 5. GIAO DIEN TRANG CHU =================
+
     private JPanel taoManHinhTrangChu() {
 
-        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        JPanel panel = new JPanel(
+                new BorderLayout(15, 15)
+        );
 
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
         panel.setBackground(new Color(245, 247, 250));
 
+        // Tieu de
         JLabel title = new JLabel("Tổng quan hoạt động");
+
         title.setFont(new Font("Arial", Font.BOLD, 20));
         title.setForeground(new Color(20, 40, 70));
 
@@ -327,6 +340,7 @@ public class TrangChuGUI extends JFrame {
         JPanel cards = new JPanel(
                 new GridLayout(2, 4, 15, 15)
         );
+
         cards.setOpaque(false);
 
         String[] names = {
@@ -334,8 +348,8 @@ public class TrangChuGUI extends JFrame {
             "Đơn hàng hôm nay",
             "Tổng khách hàng",
             "Sản phẩm sắp hết (<10)",
-            "Phiếu đặt hàng chờ xử lý",
-            "Phiếu nhập kho chờ xác nhận",
+            "Phiếu đặt hàng chờ xác nhận",
+            "Phiếu nhập kho chờ duyệt",
             "Phiếu bảo hành đang xử lý",
             "Khách hàng VIP"
         };
@@ -354,11 +368,18 @@ public class TrangChuGUI extends JFrame {
             ));
 
             JLabel label = new JLabel(name);
+
             label.setForeground(new Color(110, 120, 130));
             label.setFont(new Font("Arial", Font.PLAIN, 12));
 
-            JLabel value = new JLabel("—");
+            JLabel value = new JLabel("0");
+
             value.setFont(new Font("Arial", Font.BOLD, 22));
+            value.setForeground(new Color(20, 30, 40));
+
+            if (name.equals("Doanh thu hôm nay")) {
+                value.setText("0đ");
+            }
 
             card.add(label, BorderLayout.NORTH);
             card.add(value, BorderLayout.CENTER);
@@ -374,17 +395,23 @@ public class TrangChuGUI extends JFrame {
         );
 
         bottom.setOpaque(false);
-        bottom.setPreferredSize(new Dimension(getWidth(), 230));
+        bottom.setPreferredSize(new Dimension(getWidth(), 280));
 
-        bottom.add(taoOTrangChu("Doanh thu theo tháng"));
-        bottom.add(taoOTrangChu("Top sản phẩm bán chạy"));
+        bottom.add(
+                taoOTrangChu("Doanh thu theo tháng (triệu đồng)")
+        );
+
+        bottom.add(
+                taoOTrangChu("Top sản phẩm bán chạy")
+        );
 
         panel.add(bottom, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    // Tao o thong tin trang chu
+    // ================= 6. CAC O BIEU DO =================
+
     private JPanel taoOTrangChu(String title) {
 
         JPanel panel = new JPanel(new BorderLayout());
@@ -395,21 +422,27 @@ public class TrangChuGUI extends JFrame {
                 new Color(220, 225, 230)
         ));
 
-        JLabel label = new JLabel("    " + title);
+        JLabel label = new JLabel("   " + title);
+
         label.setFont(new Font("Arial", Font.BOLD, 13));
         label.setBorder(new EmptyBorder(10, 0, 10, 0));
 
         panel.add(label, BorderLayout.NORTH);
 
-        panel.add(
-                new JLabel("Chưa có dữ liệu", JLabel.CENTER),
-                BorderLayout.CENTER
+        JLabel noiDung = new JLabel(
+                "Chưa có dữ liệu",
+                JLabel.CENTER
         );
+
+        noiDung.setFont(new Font("Arial", Font.BOLD, 12));
+
+        panel.add(noiDung, BorderLayout.CENTER);
 
         return panel;
     }
 
-    // Tao thanh trang thai
+    // ================= 7. THANH TRANG THAI =================
+
     private void taoThanhTrangThai() {
 
         JPanel status = new JPanel(
@@ -423,7 +456,12 @@ public class TrangChuGUI extends JFrame {
                 new Color(210, 215, 220)
         ));
 
-        JLabel label = new JLabel("Tài khoản: " + tenNhanVien);
+        JLabel label = new JLabel(
+                "Tài khoản: " + tenNhanVien
+                + "  |  Phím tắt: Ctrl+số/chữ theo từng mục menu, "
+                + "Alt+chữ gạch chân để mở nhóm"
+        );
+
         label.setFont(new Font("Arial", Font.PLAIN, 11));
         label.setForeground(new Color(100, 100, 100));
 
