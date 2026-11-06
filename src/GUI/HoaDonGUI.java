@@ -27,6 +27,7 @@ public class HoaDonGUI extends JPanel {
         JPanel panelTim = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         panelTim.setOpaque(false);
         txtTimHoaDon = new JTextField(20);
+        //Lấy các mô tả trạng thái có trong ENUM
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
         model.addElement("Tất cả");
         for (TrangThaiHoaDon th : TrangThaiHoaDon.values()) {
