@@ -8,7 +8,7 @@ public class HoaDonGUI extends JPanel {
     private JTextField txtTimHoaDon;
     private JComboBox<String> cboTrangThaiHd;
     private JTable tblHoaDon, tblChiTietHoaDon;
-    private JButton btnXemInHd, btnHuyHd;
+    private JButton btnXemInHd;
     private JLabel lblThongKeHomNay;
 
     public HoaDonGUI() {
@@ -23,7 +23,7 @@ public class HoaDonGUI extends JPanel {
         JPanel panelTim = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         panelTim.setOpaque(false);
         txtTimHoaDon = new JTextField(20);
-        cboTrangThaiHd = new JComboBox<>(new String[]{"Tất cả", "DA_THANH_TOAN", "DA_HUY"});
+        cboTrangThaiHd = new JComboBox<>(new String[]{"Tất cả", "CHO_THANH_TOAN", "DA_THANH_TOAN"});
         panelTim.add(new JLabel("Tìm kiếm:"));
         panelTim.add(txtTimHoaDon);
         panelTim.add(new JLabel("Trạng thái:"));
@@ -35,14 +35,9 @@ public class HoaDonGUI extends JPanel {
         btnXemInHd.setBackground(Color.WHITE);
         btnXemInHd.setForeground(new Color(14, 98, 195));
         btnXemInHd.setFont(new Font("Arial", Font.BOLD, 13));
-
-        btnHuyHd = new JButton("Hủy hóa đơn");
-        btnHuyHd.setBackground(new Color(220, 38, 38));
-        btnHuyHd.setForeground(Color.WHITE);
-        btnHuyHd.setFont(new Font("Arial", Font.BOLD, 13));
+        btnXemInHd.setFocusPainted(false);
 
         panelNut.add(btnXemInHd);
-        panelNut.add(btnHuyHd);
 
         JPanel panelThanhCongCu = new JPanel(new BorderLayout());
         panelThanhCongCu.setOpaque(false);
@@ -57,14 +52,26 @@ public class HoaDonGUI extends JPanel {
         panelTren.add(lblThongKeHomNay, BorderLayout.SOUTH);
 
         // 2 Bảng: Danh sách hóa đơn (trên) & Chi tiết hóa đơn (dưới)
-        tblHoaDon = new JTable(new DefaultTableModel(new Object[]{
+        DefaultTableModel modelHoaDon = new DefaultTableModel(new Object[]{
             "Mã HĐ", "Ngày lập", "Khách hàng", "Nhân viên", "Khuyến mãi",
-            "Phương thức", "Tổng tiền", "Giảm giá", "Thành tiền", "Trạng thái", "Lý do hủy", "Phiếu đặt hàng"
-        }, 0));
+            "Phương thức", "Tổng tiền", "Giảm giá", "Thành tiền", "Trạng thái", "Ghi chú", "Phiếu đặt hàng"
+        }, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tblHoaDon = new JTable(modelHoaDon);
         tblHoaDon.setRowHeight(28);
 
-        tblChiTietHoaDon = new JTable(new DefaultTableModel(
-            new Object[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0));
+        DefaultTableModel modelChiTiet = new DefaultTableModel(
+            new Object[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tblChiTietHoaDon = new JTable(modelChiTiet);
         tblChiTietHoaDon.setRowHeight(28);
 
         JPanel panelBang = new JPanel(new GridLayout(2, 1, 0, 10));
