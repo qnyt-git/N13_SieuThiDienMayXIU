@@ -1,18 +1,28 @@
 package GUI;
 
+import DAO.KhuyenMaiDAO;
+import ENTITY.KhuyenMai;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class KhuyenMaiGUI extends JPanel {
-
-    private DefaultTableModel modelKM;
-    private JTable tblKhuyenMai;
-    private JTextField txtTimKiem;
-    private JLabel lblCount;
+    private final KhuyenMaiDAO khuyenMaiDAO = new KhuyenMaiDAO();
+    private final DefaultTableModel modelKhuyenMai;
+    private final JTable tblKhuyenMai;
+    private final JTextField txtTimKiem;
+    private final JLabel lblCount;
+    private List<KhuyenMai> danhSachKhuyenMai = new ArrayList<>();
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public KhuyenMaiGUI() {
         setLayout(new BorderLayout(0, 12));
@@ -21,7 +31,7 @@ public class KhuyenMaiGUI extends JPanel {
 
         JPanel top = new JPanel(new BorderLayout(0, 12));
         top.setOpaque(false);
-        JLabel lblTieuDe = new JLabel("Chương trình khuyến mãi");
+        JLabel lblTieuDe = new JLabel("Quản lý chương trình khuyến mãi");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 20));
         lblTieuDe.setForeground(new Color(20, 40, 70));
         top.add(lblTieuDe, BorderLayout.NORTH);
@@ -39,133 +49,195 @@ public class KhuyenMaiGUI extends JPanel {
         buttons.setOpaque(false);
         JButton btnSua = taoNut("Sửa", Color.WHITE, new Color(14, 98, 195));
         JButton btnXoa = taoNut("Xóa", new Color(220, 38, 38), Color.WHITE);
-        JButton btnThem = taoNut("+ Thêm mới", new Color(14, 98, 195), Color.WHITE);
+        JButton btnThem = taoNut("+ Thêm khuyến mãi", new Color(14, 98, 195), Color.WHITE);
         buttons.add(btnSua);
         buttons.add(btnXoa);
         buttons.add(btnThem);
-
         bar.add(left, BorderLayout.WEST);
         bar.add(buttons, BorderLayout.EAST);
         top.add(bar, BorderLayout.CENTER);
         add(top, BorderLayout.NORTH);
 
-        modelKM = new DefaultTableModel(new Object[]{
-                "Mã KM", "Tên khuyến mãi", "Giá trị giảm", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái"
+        modelKhuyenMai = new DefaultTableModel(new Object[]{
+                "Mã KM", "Tên khuyến mãi", "Thời gian bắt đầu", "Thời gian kết thúc", "Giá trị giảm", "Trạng thái"
         }, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
-
-        tblKhuyenMai = new JTable(modelKM);
+        tblKhuyenMai = new JTable(modelKhuyenMai);
         tblKhuyenMai.setRowHeight(28);
         tblKhuyenMai.setFont(new Font("Arial", Font.PLAIN, 13));
         tblKhuyenMai.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
         tblKhuyenMai.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(tblKhuyenMai), BorderLayout.CENTER);
 
-        lblCount = new JLabel("Hiển thị 0 bản ghi");
-        lblCount.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblCount = new JLabel("Đang tải dữ liệu...");
         lblCount.setForeground(new Color(100, 116, 139));
         add(lblCount, BorderLayout.SOUTH);
 
-        btnThem.addActionListener(e -> openForm(false));
-        btnSua.addActionListener(e -> {
-            if (kiemTraChonDong()) openForm(true);
+        btnThem.addActionListener(e -> moForm(false));
+        btnSua.addActionListener(e -> moForm(true));
+        btnXoa.addActionListener(e -> xoaKhuyenMai());
+        txtTimKiem.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { locDuLieu(); }
+            public void removeUpdate(DocumentEvent e) { locDuLieu(); }
+            public void changedUpdate(DocumentEvent e) { locDuLieu(); }
         });
-        btnXoa.addActionListener(e -> xoaDongDangChon());
 
-        tblKhuyenMai.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && tblKhuyenMai.getSelectedRow() >= 0) {
-                    openForm(true);
-                }
+        taiDuLieu();
+    }
+
+    private void taiDuLieu() {
+        try {
+            danhSachKhuyenMai = khuyenMaiDAO.getAll();
+            hienThiDanhSach(danhSachKhuyenMai);
+            if (danhSachKhuyenMai.isEmpty()) {
+                lblCount.setText("Hiển thị 0 bản ghi – kiểm tra dữ liệu bảng KhuyenMai trong SQL Server");
             }
-        });
-    }
-
-    private boolean kiemTraChonDong() {
-        if (tblKhuyenMai.getSelectedRow() < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng trong bảng", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
-        return true;
-    }
-
-    private void xoaDongDangChon() {
-        if (!kiemTraChonDong()) return;
-        if (JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa khuyến mãi đã chọn?", "Xác nhận xóa",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
-            // TODO: Gọi KhuyenMaiDAO xóa dưới CSDL và nạp lại bảng
+        } catch (Exception e) {
+            lblCount.setText("Không tải được dữ liệu khuyến mãi");
         }
     }
 
-    private void openForm(boolean edit) {
-        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this),
-                (edit ? "Cập nhật " : "Thêm mới ") + "chương trình khuyến mãi", Dialog.ModalityType.APPLICATION_MODAL);
+    private void hienThiDanhSach(List<KhuyenMai> ds) {
+        modelKhuyenMai.setRowCount(0);
+        for (KhuyenMai km : ds) {
+            modelKhuyenMai.addRow(new Object[]{
+                    km.getMaKhuyenMai(),
+                    km.getTenKhuyenMai(),
+                    km.getThoiGianBatDau() != null ? km.getThoiGianBatDau().format(FORMATTER) : "",
+                    km.getThoiGianKetThuc() != null ? km.getThoiGianKetThuc().format(FORMATTER) : "",
+                    km.getGiaTriGiam(),
+                    khuyenMaiDAO.trangThaiText(km)
+            });
+        }
+        lblCount.setText("Hiển thị " + ds.size() + " bản ghi");
+    }
 
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(Color.WHITE);
-        p.setBorder(new EmptyBorder(18, 22, 10, 22));
+    private void locDuLieu() {
+        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
+        List<KhuyenMai> ketQua = new ArrayList<>();
+        for (KhuyenMai km : danhSachKhuyenMai) {
+            String thongTin = (km.getMaKhuyenMai() + " " + km.getTenKhuyenMai()).toLowerCase();
+            if (thongTin.contains(tuKhoa)) ketQua.add(km);
+        }
+        hienThiDanhSach(ketQua);
+    }
+
+    private KhuyenMai khuyenMaiDangChon() {
+        int row = tblKhuyenMai.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một khuyến mãi.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return null;
+        }
+        String ma = String.valueOf(modelKhuyenMai.getValueAt(tblKhuyenMai.convertRowIndexToModel(row), 0));
+        for (KhuyenMai km : danhSachKhuyenMai) if (km.getMaKhuyenMai().equals(ma)) return km;
+        return null;
+    }
+
+    private void xoaKhuyenMai() {
+        KhuyenMai km = khuyenMaiDangChon();
+        if (km == null) return;
+        int chon = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa khuyến mãi " + km.getTenKhuyenMai() + "?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (chon == JOptionPane.YES_OPTION) {
+            if (khuyenMaiDAO.delete(km)) {
+                JOptionPane.showMessageDialog(this, "Xóa khuyến mãi thành công.");
+                taiDuLieu();
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void moForm(boolean sua) {
+        final KhuyenMai kmCu = sua ? khuyenMaiDangChon() : null;
+        if (sua && kmCu == null) return;
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), sua ? "Cập nhật khuyến mãi" : "Thêm khuyến mãi mới", Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(Color.WHITE);
+        form.setBorder(new EmptyBorder(18, 22, 10, 22));
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 4, 6, 4);
         g.anchor = GridBagConstraints.WEST;
 
-        JTextField txtId = new JTextField(24);
-        txtId.setEnabled(false);
-        JTextField txtTen = new JTextField(24);
-        JTextField txtGiam = new JTextField(24);
-        JTextField txtBd = new JTextField(24);
-        JTextField txtKt = new JTextField(24);
-        JComboBox<String> cboTt = new JComboBox<>(new String[]{"Đang diễn ra", "Đã kết thúc"});
+        JTextField txtMa = new JTextField(sua ? kmCu.getMaKhuyenMai() : khuyenMaiDAO.taoMaMoi(), 22);
+        txtMa.setEditable(false);
+        JTextField txtTen = new JTextField(sua ? kmCu.getTenKhuyenMai() : "", 22);
+        JTextField txtBatDau = new JTextField(sua && kmCu.getThoiGianBatDau() != null ? kmCu.getThoiGianBatDau().toLocalDate().toString() : LocalDate.now().toString(), 22);
+        JTextField txtKetThuc = new JTextField(sua && kmCu.getThoiGianKetThuc() != null ? kmCu.getThoiGianKetThuc().toLocalDate().toString() : LocalDate.now().plusDays(7).toString(), 22);
+        JTextField txtGiaTri = new JTextField(sua ? String.valueOf(kmCu.getGiaTriGiam()) : "", 22);
+        JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Đang diễn ra", "Đã kết thúc"});
+        cboTrangThai.setSelectedItem(sua && kmCu.isTrangThai() ? "Đang diễn ra" : "Đã kết thúc");
 
-        // TODO: Nếu edit == true, đổ dữ liệu khuyến mãi đang chọn vào form
+        themDong(form, g, 0, "Mã khuyến mãi", txtMa);
+        themDong(form, g, 1, "Tên khuyến mãi *", txtTen);
+        themDong(form, g, 2, "Ngày bắt đầu (yyyy-MM-dd) *", txtBatDau);
+        themDong(form, g, 3, "Ngày kết thúc (yyyy-MM-dd) *", txtKetThuc);
+        themDong(form, g, 4, "Giá trị giảm *", txtGiaTri);
+        themDong(form, g, 5, "Trạng thái", cboTrangThai);
 
-        addRow(p, g, 0, "Mã KM (tự động)", txtId);
-        addRow(p, g, 1, "Tên khuyến mãi *", txtTen);
-        addRow(p, g, 2, "Giá trị giảm *", txtGiam);
-        addRow(p, g, 3, "Thời gian bắt đầu *", txtBd);
-        addRow(p, g, 4, "Thời gian kết thúc *", txtKt);
-        addRow(p, g, 5, "Trạng thái *", cboTt);
-
-        JLabel err = new JLabel(" ");
-        err.setForeground(new Color(220, 38, 38));
+        JLabel lblLoi = new JLabel(" ");
+        lblLoi.setForeground(Color.RED);
         JButton btnLuu = taoNut("Lưu", new Color(14, 98, 195), Color.WHITE);
         JButton btnHuy = taoNut("Hủy", Color.WHITE, new Color(14, 98, 195));
-        btnHuy.addActionListener(e -> d.dispose());
+        btnHuy.addActionListener(e -> dialog.dispose());
 
         btnLuu.addActionListener(e -> {
-            // TODO: Kiểm tra hợp lệ và gọi KhuyenMaiDAO lưu vào CSDL
-            d.dispose();
+            try {
+                String ten = txtTen.getText().trim();
+                if (ten.isEmpty() || txtBatDau.getText().trim().isEmpty() || txtKetThuc.getText().trim().isEmpty() || txtGiaTri.getText().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Vui lòng điền đầy đủ các thông tin bắt buộc.");
+                }
+                LocalDate bd = LocalDate.parse(txtBatDau.getText().trim());
+                LocalDate kt = LocalDate.parse(txtKetThuc.getText().trim());
+                double giaTri = Double.parseDouble(txtGiaTri.getText().trim());
+
+                KhuyenMai km = new KhuyenMai();
+                km.setMaKhuyenMai(txtMa.getText().trim());
+                km.setTenKhuyenMai(ten);
+                km.setGiaTriGiam(giaTri);
+                km.setTrangThai("Đang diễn ra".equals(cboTrangThai.getSelectedItem()));
+                khuyenMaiDAO.datThoiGian(km, bd, kt);
+
+                boolean thanhCong = sua ? khuyenMaiDAO.update(km) : khuyenMaiDAO.insert(km);
+                if (thanhCong) {
+                    JOptionPane.showMessageDialog(dialog, sua ? "Cập nhật thành công." : "Thêm mới thành công.");
+                    dialog.dispose();
+                    taiDuLieu();
+                } else {
+                    lblLoi.setText("Lưu thất bại.");
+                }
+            } catch (DateTimeParseException ex) {
+                lblLoi.setText("Định dạng ngày phải là yyyy-MM-dd.");
+            } catch (NumberFormatException ex) {
+                lblLoi.setText("Giá trị giảm phải là số hợp lệ.");
+            } catch (IllegalArgumentException ex) {
+                lblLoi.setText(ex.getMessage());
+            }
         });
 
-        JPanel south = new JPanel(new BorderLayout());
-        south.setBackground(Color.WHITE);
-        south.setBorder(new EmptyBorder(0, 22, 16, 22));
-        JPanel bt = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        bt.setBackground(Color.WHITE);
-        bt.add(btnHuy);
-        bt.add(btnLuu);
-        south.add(err, BorderLayout.NORTH);
-        south.add(bt, BorderLayout.SOUTH);
-
-        d.getRootPane().setDefaultButton(btnLuu);
-        d.add(p, BorderLayout.CENTER);
-        d.add(south, BorderLayout.SOUTH);
-        d.pack();
-        d.setMinimumSize(new Dimension(480, 0));
-        d.setLocationRelativeTo(this);
-        d.setVisible(true);
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.setBackground(Color.WHITE);
+        bottom.setBorder(new EmptyBorder(0, 22, 16, 22));
+        JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        nut.setBackground(Color.WHITE);
+        nut.add(btnHuy);
+        nut.add(btnLuu);
+        bottom.add(lblLoi, BorderLayout.NORTH);
+        bottom.add(nut, BorderLayout.SOUTH);
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(bottom, BorderLayout.SOUTH);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
-    private void addRow(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
+    private void themDong(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
         g.gridy = row; g.gridx = 0; g.weightx = 0; g.fill = GridBagConstraints.NONE;
-        JLabel l = new JLabel(label);
-        l.setFont(new Font("Arial", Font.BOLD, 13));
-        l.setPreferredSize(new Dimension(150, 28));
-        p.add(l, g);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Arial", Font.BOLD, 13));
+        lbl.setPreferredSize(new Dimension(170, 28));
+        p.add(lbl, g);
         g.gridx = 1; g.weightx = 1; g.fill = GridBagConstraints.HORIZONTAL;
         c.setFont(new Font("Arial", Font.PLAIN, 13));
         c.setPreferredSize(new Dimension(280, 32));
@@ -174,8 +246,7 @@ public class KhuyenMaiGUI extends JPanel {
 
     private JButton taoNut(String text, Color bg, Color fg) {
         JButton b = new JButton(text);
-        b.setBackground(bg);
-        b.setForeground(fg);
+        b.setBackground(bg); b.setForeground(fg);
         b.setFont(new Font("Arial", Font.BOLD, 13));
         b.setFocusPainted(false);
         return b;
