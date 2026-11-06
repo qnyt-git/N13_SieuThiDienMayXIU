@@ -12,11 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO của KhuyenMai.
- * Bao gồm thao tác CSDL (insert, update, delete, getAll, taoMaMoi) 
- * và toàn bộ các phương thức nghiệp vụ, kiểm tra, tính toán.
- */
+
 public class KhuyenMaiDAO implements IDAO<KhuyenMai> {
 
     @Override
