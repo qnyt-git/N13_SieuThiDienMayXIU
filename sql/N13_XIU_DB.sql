@@ -1,3 +1,13 @@
+USE master;
+GO
+
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'N13_XIU_DB')
+BEGIN
+    ALTER DATABASE N13_XIU_DB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE N13_XIU_DB;
+END
+GO
+
 CREATE DATABASE N13_XIU_DB;
 GO
 USE N13_XIU_DB;
@@ -12,6 +22,15 @@ CREATE TABLE CaLamViec (
     tenCa NVARCHAR(50) NOT NULL,
     gioBatDau DATETIME2 NOT NULL,
     gioKetThuc DATETIME2 NOT NULL
+);
+GO
+
+CREATE TABLE ChucVu (
+    maChucVu VARCHAR(20) PRIMARY KEY,
+    tenChucVu NVARCHAR(100) NOT NULL UNIQUE,
+    viTriLamViec NVARCHAR(100) NOT NULL,
+    moTaCongViec NVARCHAR(255),
+    trangThai BIT NOT NULL DEFAULT 1
 );
 GO
 
@@ -43,10 +62,11 @@ CREATE TABLE NhanVien (
     soDienThoai VARCHAR(20) NOT NULL,
     ngaySinh DATE NOT NULL,
     trinhDoHocVan NVARCHAR(100),
-    chucVu NVARCHAR(50) NOT NULL,
+    maChucVu VARCHAR(20) NOT NULL,
     heSoLuong FLOAT NOT NULL,
     luongCoBan INT NOT NULL,
-    trangThai BIT NOT NULL
+    trangThai BIT NOT NULL,
+    CONSTRAINT FK_NhanVien_ChucVu FOREIGN KEY (maChucVu) REFERENCES ChucVu(maChucVu)
 );
 GO
 
@@ -196,7 +216,6 @@ CREATE TABLE ChiTietPhieuBaoHanh (
 );
 GO
 
-
 -----------------------------------------------------------------
 -- PHẦN 2: THÊM DỮ LIỆU MẪU
 -----------------------------------------------------------------
@@ -207,6 +226,14 @@ INSERT INTO CaLamViec VALUES
 ('CA03', N'Ca Tối', '2026-06-01 18:00:00', '2026-06-01 22:00:00'),
 ('CA04', N'Ca Đêm', '2026-06-01 22:00:00', '2026-06-02 06:00:00'),
 ('CA05', N'Ca Hành Chính', '2026-06-01 08:00:00', '2026-06-01 17:00:00');
+GO
+
+INSERT INTO ChucVu VALUES 
+('CV01', N'Quản lý', N'Văn phòng điều hành', N'Quản lý nhân sự, duyệt phiếu nhập kho, phân ca và toàn bộ hệ thống', 1),
+('CV02', N'Nhân viên bán hàng', N'Quầy trưng bày & Thu ngân', N'Tư vấn khách hàng, lập phiếu đặt hàng, lập hóa đơn và thu tiền', 1),
+('CV03', N'Nhân viên kho', N'Kho hàng trung tâm', N'Kiểm kê hàng tồn, lập phiếu nhập kho và sắp xếp hàng hóa', 1),
+('CV04', N'Nhân viên kế toán', N'Văn phòng điều hành', N'Đối soát hóa đơn, quản lý thu chi và lập báo cáo thống kê doanh thu', 1),
+('CV05', N'Nhân viên CSKH', N'Quầy dịch vụ & Bảo hành', N'Tiếp nhận sản phẩm lỗi, lập phiếu bảo hành và liên hệ hãng sửa chữa', 1);
 GO
 
 INSERT INTO NhaCungCap VALUES 
@@ -226,11 +253,11 @@ INSERT INTO KhachHang VALUES
 GO
 
 INSERT INTO NhanVien VALUES 
-('NV01', N'Trần Văn Quản', 1, '0981111111', '1995-05-10', N'Đại học', N'QUAN_LY', 3.0, 15000000, 1),
-('NV02', N'Lê Thị Bích', 0, '0982222222', '1998-08-15', N'Cao đẳng', N'BAN_HANG', 2.2, 8000000, 1),
-('NV03', N'Nguyễn Văn Chung', 1, '0983333333', '2000-12-20', N'Trung cấp', N'KHO', 2.1, 7500000, 1),
-('NV04', N'Phạm Thị Đào', 0, '0984444444', '1997-03-25', N'Đại học', N'KE_TOAN', 2.5, 10000000, 1),
-('NV05', N'Hoàng Văn Nam', 1, '0985555555', '1999-07-30', N'Cao đẳng', N'CSKH', 2.2, 8000000, 1);
+('NV01', N'Trần Văn Quản', 1, '0981111111', '1995-05-10', N'Đại học', 'CV01', 3.0, 15000000, 1),
+('NV02', N'Lê Thị Bích', 0, '0982222222', '1998-08-15', N'Cao đẳng', 'CV02', 2.2, 8000000, 1),
+('NV03', N'Nguyễn Văn Chung', 1, '0983333333', '2000-12-20', N'Trung cấp', 'CV03', 2.1, 7500000, 1),
+('NV04', N'Phạm Thị Đào', 0, '0984444444', '1997-03-25', N'Đại học', 'CV04', 2.5, 10000000, 1),
+('NV05', N'Hoàng Văn Nam', 1, '0985555555', '1999-07-30', N'Cao đẳng', 'CV05', 2.2, 8000000, 1);
 GO
 
 INSERT INTO KhuyenMai VALUES 
@@ -327,27 +354,4 @@ INSERT INTO ChiTietPhieuBaoHanh VALUES
 ('PBH03', 'SP03', N'Mất nguồn', N'Sửa chữa nguồn'),
 ('PBH04', 'SP04', N'Kẹt lồng giặt', N'Vệ sinh và sửa lồng'),
 ('PBH05', 'SP05', N'Không nóng', N'Thay cầu chì nhiệt');
-GO
-
-
------------------------------------------------------------------
--- PHẦN 3: XEM (SELECT)
------------------------------------------------------------------
-
-SELECT * FROM CaLamViec;
-SELECT * FROM NhaCungCap;
-SELECT * FROM KhachHang;
-SELECT * FROM NhanVien;
-SELECT * FROM KhuyenMai;
-SELECT * FROM SanPham;
-SELECT * FROM TaiKhoanNhanVien;
-SELECT * FROM PhanCa;
-SELECT * FROM PhieuNhapKho;
-SELECT * FROM PhieuDatHang;
-SELECT * FROM PhieuBaoHanh;
-SELECT * FROM ChiTietPhieuNhapKho;
-SELECT * FROM ChiTietPhieuDatHang;
-SELECT * FROM HoaDon;
-SELECT * FROM ChiTietHoaDon;
-SELECT * FROM ChiTietPhieuBaoHanh;
 GO
