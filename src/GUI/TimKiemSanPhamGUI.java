@@ -1,60 +1,113 @@
 package GUI;
 
+import DAO.SanPhamDAO;
+import ENTITY.SanPham;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TimKiemSanPhamGUI extends JPanel {
-    private JTextField txtTuKhoa, txtGiaTu, txtGiaDen;
-    private JCheckBox chkConHang;
-    private JButton btnTimKiem, btnLamMoi;
-    private JTable tblKetQua;
-    private JLabel lblSoLuongKetQua;
+    private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
+    private DefaultTableModel modelSP;
+    private JTable tblSP;
+    private JTextField txtTuKhoa;
+    private JComboBox<String> cboLocTrangThai;
+    private List<SanPham> danhSachGoc = new ArrayList<>();
 
     public TimKiemSanPhamGUI() {
         setLayout(new BorderLayout(0, 12));
         setBackground(new Color(245, 247, 250));
         setBorder(new EmptyBorder(18, 22, 18, 22));
 
-        JPanel panelTren = new JPanel(new BorderLayout(0, 12));
-        panelTren.setOpaque(false);
-
-        JLabel lblTieuDe = new JLabel("Tìm kiếm sản phẩm");
+        JPanel top = new JPanel(new BorderLayout(0, 10));
+        top.setOpaque(false);
+        JLabel lblTieuDe = new JLabel("Tìm kiếm và tra cứu sản phẩm nâng cao");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 20));
         lblTieuDe.setForeground(new Color(20, 40, 70));
-        panelTren.add(lblTieuDe, BorderLayout.NORTH);
+        top.add(lblTieuDe, BorderLayout.NORTH);
 
-        JPanel panelTieuChi = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
-        panelTieuChi.setBackground(Color.WHITE);
-        panelTieuChi.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 230)));
+        // Thanh điều kiện tìm kiếm và lọc
+        JPanel pnlFilter = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlFilter.setOpaque(false);
+        
+        txtTuKhoa = new JTextField(22);
+        txtTuKhoa.setPreferredSize(new Dimension(220, 32));
+        
+        cboLocTrangThai = new JComboBox<>(new String[]{"Tất cả trạng thái", "Sản phẩm mới", "Đang bán", "Hết hàng", "Tạm ngưng"});
+        
+        pnlFilter.add(new JLabel("Từ khóa (Mã/Tên):"));
+        pnlFilter.add(txtTuKhoa);
+        pnlFilter.add(new JLabel("Trạng thái:"));
+        pnlFilter.add(cboLocTrangThai);
 
-        txtTuKhoa = new JTextField(18);
-        txtGiaTu = new JTextField(9);
-        txtGiaDen = new JTextField(9);
-        chkConHang = new JCheckBox("Chỉ hiển thị còn hàng");
-        chkConHang.setBackground(Color.WHITE);
+        top.add(pnlFilter, BorderLayout.CENTER);
+        add(top, BorderLayout.NORTH);
 
-        btnTimKiem = new JButton("Tìm kiếm");
-        btnTimKiem.setBackground(new Color(14, 98, 195)); btnTimKiem.setForeground(Color.WHITE);
-        btnLamMoi = new JButton("Làm mới");
+        modelSP = new DefaultTableModel(new Object[]{
+                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Giá bán (VNĐ)", "Tồn kho", "Bảo hành", "Trạng thái"
+        }, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+        tblSP = new JTable(modelSP);
+        tblSP.setRowHeight(28);
+        add(new JScrollPane(tblSP), BorderLayout.CENTER);
 
-        panelTieuChi.add(new JLabel("Mã / tên / mã vạch:")); panelTieuChi.add(txtTuKhoa);
-        panelTieuChi.add(new JLabel("Giá từ:")); panelTieuChi.add(txtGiaTu);
-        panelTieuChi.add(new JLabel("đến:")); panelTieuChi.add(txtGiaDen);
-        panelTieuChi.add(chkConHang);
-        panelTieuChi.add(btnTimKiem);
-        panelTieuChi.add(btnLamMoi);
+        // Lắng nghe sự kiện tìm kiếm thời gian thực (Real-time search)
+        txtTuKhoa.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { thucHienTimKiem(); }
+            public void removeUpdate(DocumentEvent e) { thucHienTimKiem(); }
+            public void changedUpdate(DocumentEvent e) { thucHienTimKiem(); }
+        });
 
-        panelTren.add(panelTieuChi, BorderLayout.CENTER);
-        add(panelTren, BorderLayout.NORTH);
+        cboLocTrangThai.addActionListener(e -> thucHienTimKiem());
 
-        tblKetQua = new JTable(new DefaultTableModel(
-            new Object[]{"Mã SP", "Tên sản phẩm", "Mã vạch", "Giá bán", "Số lượng tồn", "Bảo hành (tháng)", "Trạng thái"}, 0));
-        tblKetQua.setRowHeight(28);
-        add(new JScrollPane(tblKetQua), BorderLayout.CENTER);
+        taiDuLieu();
+    }
 
-        lblSoLuongKetQua = new JLabel("Tìm thấy 0 sản phẩm");
-        add(lblSoLuongKetQua, BorderLayout.SOUTH);
+    private void taiDuLieu() {
+        danhSachGoc = sanPhamDAO.getAll();
+        hienThiDanhSach(danhSachGoc);
+    }
+
+    private void hienThiDanhSach(List<SanPham> list) {
+        modelSP.setRowCount(0);
+        for (SanPham sp : list) {
+            String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
+            modelSP.addRow(new Object[]{
+                    sp.getMaSanPham(),
+                    sp.getTenSanPham(),
+                    tenNCC,
+                    String.format("%,.0f", sp.getGiaBan()),
+                    sp.getSoLuongTon(),
+                    sp.getThoiHanBaoHanh(),
+                    sp.getTrangThai() != null ? sp.getTrangThai().getMoTa() : ""
+            });
+        }
+    }
+
+    private void thucHienTimKiem() {
+        String tuKhoa = txtTuKhoa.getText().trim().toLowerCase();
+        String trangThaiChon = (String) cboLocTrangThai.getSelectedItem();
+
+        List<SanPham> ketQua = new ArrayList<>();
+        for (SanPham sp : danhSachGoc) {
+            String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
+            String thongTin = (sp.getMaSanPham() + " " + sp.getTenSanPham() + " " + tenNCC).toLowerCase();
+            
+            boolean thoaManTuKhoa = thongTin.contains(tuKhoa);
+            boolean thoaManTrangThai = trangThaiChon.equals("Tất cả trạng thái") || 
+                    (sp.getTrangThai() != null && sp.getTrangThai().getMoTa().equalsIgnoreCase(trangThaiChon));
+
+            if (thoaManTuKhoa && thoaManTrangThai) {
+                ketQua.add(sp);
+            }
+        }
+        hienThiDanhSach(ketQua);
     }
 }
