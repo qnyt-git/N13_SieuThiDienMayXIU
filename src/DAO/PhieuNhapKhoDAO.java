@@ -18,10 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DAO của PhieuNhapKho (+ ChiTietPhieuNhapKho).
- * Tuân thủ mô hình 3 lớp: Giữ nguyên 100% Entity, đưa toàn bộ logic xử lý và CSDL vào DAO.
- */
+
 public class PhieuNhapKhoDAO implements IDAO<PhieuNhapKho> {
 
     private static TrangThaiPhieuNhapKho docTrangThai(String s) {
