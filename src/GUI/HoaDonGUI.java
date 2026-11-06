@@ -2,7 +2,11 @@ package GUI;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import ENUM.TrangThaiHoaDon;
+
 import java.awt.*;
+import java.util.Iterator;
 
 public class HoaDonGUI extends JPanel {
     private JTextField txtTimHoaDon;
@@ -23,7 +27,14 @@ public class HoaDonGUI extends JPanel {
         JPanel panelTim = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         panelTim.setOpaque(false);
         txtTimHoaDon = new JTextField(20);
-        cboTrangThaiHd = new JComboBox<>(new String[]{"Tất cả", "CHO_THANH_TOAN", "DA_THANH_TOAN"});
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+        model.addElement("Tất cả");
+        for (TrangThaiHoaDon th : TrangThaiHoaDon.values()) {
+			model.addElement(th.getMoTa());
+			
+		}
+        
+        cboTrangThaiHd = new JComboBox<>(model);
         panelTim.add(new JLabel("Tìm kiếm:"));
         panelTim.add(txtTimHoaDon);
         panelTim.add(new JLabel("Trạng thái:"));
