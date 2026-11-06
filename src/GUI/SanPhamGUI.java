@@ -1,18 +1,29 @@
 package GUI;
 
+import DAO.NhaCungCapDAO;
+import DAO.SanPhamDAO;
+import ENTITY.NhaCungCap;
+import ENTITY.SanPham;
+import ENUM.TrangThaiSanPham;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SanPhamGUI extends JPanel {
-
-    private DefaultTableModel modelSanPham;
-    private JTable tblSanPham;
-    private JTextField txtTimKiem;
-    private JLabel lblCount;
+    private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
+    private final NhaCungCapDAO nccDAO = new NhaCungCapDAO();
+    
+    private final DefaultTableModel modelSanPham;
+    private final JTable tblSanPham;
+    private final JTextField txtTimKiem;
+    private final JLabel lblCount;
+    private List<SanPham> danhSachSanPham = new ArrayList<>();
 
     public SanPhamGUI() {
         setLayout(new BorderLayout(0, 12));
@@ -21,7 +32,7 @@ public class SanPhamGUI extends JPanel {
 
         JPanel top = new JPanel(new BorderLayout(0, 12));
         top.setOpaque(false);
-        JLabel lblTieuDe = new JLabel("Quản lý sản phẩm");
+        JLabel lblTieuDe = new JLabel("Quản lý sản phẩm thiết bị");
         lblTieuDe.setFont(new Font("Arial", Font.BOLD, 20));
         lblTieuDe.setForeground(new Color(20, 40, 70));
         top.add(lblTieuDe, BorderLayout.NORTH);
@@ -39,25 +50,20 @@ public class SanPhamGUI extends JPanel {
         buttons.setOpaque(false);
         JButton btnSua = taoNut("Sửa", Color.WHITE, new Color(14, 98, 195));
         JButton btnXoa = taoNut("Xóa", new Color(220, 38, 38), Color.WHITE);
-        JButton btnThem = taoNut("+ Thêm mới", new Color(14, 98, 195), Color.WHITE);
+        JButton btnThem = taoNut("+ Thêm sản phẩm", new Color(14, 98, 195), Color.WHITE);
         buttons.add(btnSua);
         buttons.add(btnXoa);
         buttons.add(btnThem);
-
         bar.add(left, BorderLayout.WEST);
         bar.add(buttons, BorderLayout.EAST);
         top.add(bar, BorderLayout.CENTER);
         add(top, BorderLayout.NORTH);
 
         modelSanPham = new DefaultTableModel(new Object[]{
-                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Giá bán", "Số lượng tồn", "Bảo hành", "Trạng thái"
+                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Giá bán (VNĐ)", "Tồn kho", "Bảo hành", "Trạng thái"
         }, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
-
         tblSanPham = new JTable(modelSanPham);
         tblSanPham.setRowHeight(28);
         tblSanPham.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -65,110 +71,205 @@ public class SanPhamGUI extends JPanel {
         tblSanPham.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(tblSanPham), BorderLayout.CENTER);
 
-        lblCount = new JLabel("Hiển thị 0 bản ghi");
-        lblCount.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblCount = new JLabel("Đang tải dữ liệu...");
         lblCount.setForeground(new Color(100, 116, 139));
         add(lblCount, BorderLayout.SOUTH);
 
-        btnThem.addActionListener(e -> openForm(false));
-        btnSua.addActionListener(e -> {
-            if (kiemTraChonDong()) openForm(true);
+        btnThem.addActionListener(e -> moForm(false));
+        btnSua.addActionListener(e -> moForm(true));
+        btnXoa.addActionListener(e -> xoaSanPham());
+        txtTimKiem.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { locDuLieu(); }
+            public void removeUpdate(DocumentEvent e) { locDuLieu(); }
+            public void changedUpdate(DocumentEvent e) { locDuLieu(); }
         });
-        btnXoa.addActionListener(e -> xoaDongDangChon());
 
-        tblSanPham.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && tblSanPham.getSelectedRow() >= 0) {
-                    openForm(true);
-                }
+        taiDuLieu();
+    }
+
+    private void taiDuLieu() {
+        try {
+            danhSachSanPham = sanPhamDAO.getAll();
+            hienThiDanhSach(danhSachSanPham);
+            if (danhSachSanPham.isEmpty()) {
+                lblCount.setText("Hiển thị 0 bản ghi – kiểm tra dữ liệu bảng SanPham trong SQL Server");
             }
-        });
-    }
-
-    private boolean kiemTraChonDong() {
-        if (tblSanPham.getSelectedRow() < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng trong bảng", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
-        return true;
-    }
-
-    private void xoaDongDangChon() {
-        if (!kiemTraChonDong()) return;
-        if (JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa sản phẩm đã chọn?", "Xác nhận xóa",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
-            // TODO: Gọi SanPhamDAO xóa dưới CSDL và nạp lại bảng
+        } catch (Exception e) {
+            lblCount.setText("Không tải được dữ liệu sản phẩm");
         }
     }
 
-    private void openForm(boolean edit) {
-        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this),
-                (edit ? "Cập nhật " : "Thêm mới ") + "quản lý sản phẩm", Dialog.ModalityType.APPLICATION_MODAL);
+    private void hienThiDanhSach(List<SanPham> ds) {
+        modelSanPham.setRowCount(0);
+        for (SanPham sp : ds) {
+            String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
+            modelSanPham.addRow(new Object[]{
+                    sp.getMaSanPham(),
+                    sp.getTenSanPham(),
+                    tenNCC,
+                    String.format("%,.0f", sp.getGiaBan()),
+                    sp.getSoLuongTon(),
+                    sp.getThoiHanBaoHanh(),
+                    sp.getTrangThai() != null ? sp.getTrangThai().getMoTa() : ""
+            });
+        }
+        lblCount.setText("Hiển thị " + ds.size() + " bản ghi");
+    }
 
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(Color.WHITE);
-        p.setBorder(new EmptyBorder(18, 22, 10, 22));
+    private void locDuLieu() {
+        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
+        List<SanPham> ketQua = new ArrayList<>();
+        for (SanPham sp : danhSachSanPham) {
+            String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
+            String thongTin = (sp.getMaSanPham() + " " + sp.getTenSanPham() + " " + tenNCC).toLowerCase();
+            if (thongTin.contains(tuKhoa)) ketQua.add(sp);
+        }
+        hienThiDanhSach(ketQua);
+    }
+
+    private SanPham sanPhamDangChon() {
+        int row = tblSanPham.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một sản phẩm.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return null;
+        }
+        String ma = String.valueOf(modelSanPham.getValueAt(tblSanPham.convertRowIndexToModel(row), 0));
+        for (SanPham sp : danhSachSanPham) if (sp.getMaSanPham().equals(ma)) return sp;
+        return null;
+    }
+
+    private void xoaSanPham() {
+        SanPham sp = sanPhamDangChon();
+        if (sp == null) return;
+        int chon = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa sản phẩm " + sp.getTenSanPham() + "?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (chon == JOptionPane.YES_OPTION) {
+            if (sanPhamDAO.delete(sp)) {
+                JOptionPane.showMessageDialog(this, "Xóa sản phẩm thành công.");
+                taiDuLieu();
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void moForm(boolean sua) {
+        final SanPham spCu = sua ? sanPhamDangChon() : null;
+        if (sua && spCu == null) return;
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), sua ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới", Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(Color.WHITE);
+        form.setBorder(new EmptyBorder(18, 22, 10, 22));
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 4, 6, 4);
         g.anchor = GridBagConstraints.WEST;
 
-        JTextField txtId = new JTextField(24);
-        txtId.setEnabled(false);
-        JTextField txtTen = new JTextField(24);
-        JComboBox<String> cboNcc = new JComboBox<>();
-        JTextField txtGia = new JTextField(24);
-        JTextField txtTon = new JTextField(24);
-        JTextField txtBh = new JTextField(24);
-        JComboBox<String> cboTt = new JComboBox<>(new String[]{"SAN_PHAM_MOI", "DANG_BAN", "HET_HANG", "TAM_NGUNG"});
+        JTextField txtMa = new JTextField(sua ? spCu.getMaSanPham() : sanPhamDAO.taoMaMoi(), 22);
+        txtMa.setEditable(false);
+        JTextField txtTen = new JTextField(sua ? spCu.getTenSanPham() : "", 22);
 
-        // TODO: Nạp danh sách Nhà cung cấp từ NhaCungCapDAO vào cboNcc
-        // TODO: Nếu edit == true, đổ dữ liệu sản phẩm đang chọn vào form
+        List<NhaCungCap> listNCC = nccDAO.getAll();
+        JComboBox<NhaCungCap> cboNCC = new JComboBox<>(listNCC.toArray(new NhaCungCap[0]));
+        cboNCC.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof NhaCungCap) {
+                    NhaCungCap ncc = (NhaCungCap) value;
+                    setText(ncc.getMaNCC() + " - " + ncc.getTenNCC());
+                }
+                return this;
+            }
+        });
+        if (sua && spCu.getMaNCC() != null) {
+            for (NhaCungCap ncc : listNCC) {
+                if (ncc.getMaNCC().equals(spCu.getMaNCC().getMaNCC())) {
+                    cboNCC.setSelectedItem(ncc);
+                    break;
+                }
+            }
+        }
 
-        addRow(p, g, 0, "Mã SP (tự động)", txtId);
-        addRow(p, g, 1, "Tên sản phẩm *", txtTen);
-        addRow(p, g, 2, "Nhà cung cấp *", cboNcc);
-        addRow(p, g, 3, "Giá bán (đ) *", txtGia);
-        addRow(p, g, 4, "Số lượng tồn *", txtTon);
-        addRow(p, g, 5, "Thời hạn bảo hành *", txtBh);
-        addRow(p, g, 6, "Trạng thái *", cboTt);
+        JTextField txtGia = new JTextField(sua ? String.valueOf(spCu.getGiaBan()) : "", 22);
+        JTextField txtTon = new JTextField(sua ? String.valueOf(spCu.getSoLuongTon()) : "0", 22);
+        JTextField txtBaoHanh = new JTextField(sua ? spCu.getThoiHanBaoHanh() : "12 tháng", 22);
+        JTextField txtMoTa = new JTextField(sua ? spCu.getMoTaSanPham() : "", 22);
+        JComboBox<TrangThaiSanPham> cboTrangThai = new JComboBox<>(TrangThaiSanPham.values());
+        if (sua && spCu.getTrangThai() != null) cboTrangThai.setSelectedItem(spCu.getTrangThai());
 
-        JLabel err = new JLabel(" ");
-        err.setForeground(new Color(220, 38, 38));
+        themDong(form, g, 0, "Mã sản phẩm", txtMa);
+        themDong(form, g, 1, "Tên sản phẩm *", txtTen);
+        themDong(form, g, 2, "Nhà cung cấp *", cboNCC);
+        themDong(form, g, 3, "Giá bán (VNĐ) *", txtGia);
+        themDong(form, g, 4, "Số lượng tồn *", txtTon);
+        themDong(form, g, 5, "Thời hạn bảo hành *", txtBaoHanh);
+        themDong(form, g, 6, "Mô tả sản phẩm", txtMoTa);
+        themDong(form, g, 7, "Trạng thái", cboTrangThai);
+
+        JLabel lblLoi = new JLabel(" ");
+        lblLoi.setForeground(Color.RED);
         JButton btnLuu = taoNut("Lưu", new Color(14, 98, 195), Color.WHITE);
         JButton btnHuy = taoNut("Hủy", Color.WHITE, new Color(14, 98, 195));
-        btnHuy.addActionListener(e -> d.dispose());
+        btnHuy.addActionListener(e -> dialog.dispose());
 
         btnLuu.addActionListener(e -> {
-            // TODO: Kiểm tra hợp lệ và gọi SanPhamDAO lưu vào CSDL
-            d.dispose();
+            try {
+                String ten = txtTen.getText().trim();
+                if (ten.isEmpty() || txtGia.getText().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Vui lòng nhập tên và giá bán sản phẩm.");
+                }
+                double gia = Double.parseDouble(txtGia.getText().trim());
+                int ton = Integer.parseInt(txtTon.getText().trim());
+                NhaCungCap ncc = (NhaCungCap) cboNCC.getSelectedItem();
+
+                SanPham sp = new SanPham(
+                        txtMa.getText().trim(),
+                        ten,
+                        ncc,
+                        gia,
+                        ton,
+                        txtBaoHanh.getText().trim(),
+                        txtMoTa.getText().trim(),
+                        (TrangThaiSanPham) cboTrangThai.getSelectedItem()
+                );
+
+                boolean thanhCong = sua ? sanPhamDAO.update(sp) : sanPhamDAO.insert(sp);
+                if (thanhCong) {
+                    JOptionPane.showMessageDialog(dialog, sua ? "Cập nhật thành công." : "Thêm mới thành công.");
+                    dialog.dispose();
+                    taiDuLieu();
+                } else {
+                    lblLoi.setText("Lưu thất bại.");
+                }
+            } catch (NumberFormatException ex) {
+                lblLoi.setText("Giá bán và tồn kho phải là số hợp lệ.");
+            } catch (IllegalArgumentException ex) {
+                lblLoi.setText(ex.getMessage());
+            }
         });
 
-        JPanel south = new JPanel(new BorderLayout());
-        south.setBackground(Color.WHITE);
-        south.setBorder(new EmptyBorder(0, 22, 16, 22));
-        JPanel bt = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        bt.setBackground(Color.WHITE);
-        bt.add(btnHuy);
-        bt.add(btnLuu);
-        south.add(err, BorderLayout.NORTH);
-        south.add(bt, BorderLayout.SOUTH);
-
-        d.getRootPane().setDefaultButton(btnLuu);
-        d.add(p, BorderLayout.CENTER);
-        d.add(south, BorderLayout.SOUTH);
-        d.pack();
-        d.setMinimumSize(new Dimension(480, 0));
-        d.setLocationRelativeTo(this);
-        d.setVisible(true);
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.setBackground(Color.WHITE);
+        bottom.setBorder(new EmptyBorder(0, 22, 16, 22));
+        JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        nut.setBackground(Color.WHITE);
+        nut.add(btnHuy);
+        nut.add(btnLuu);
+        bottom.add(lblLoi, BorderLayout.NORTH);
+        bottom.add(nut, BorderLayout.SOUTH);
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(bottom, BorderLayout.SOUTH);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
-    private void addRow(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
+    private void themDong(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
         g.gridy = row; g.gridx = 0; g.weightx = 0; g.fill = GridBagConstraints.NONE;
-        JLabel l = new JLabel(label);
-        l.setFont(new Font("Arial", Font.BOLD, 13));
-        l.setPreferredSize(new Dimension(150, 28));
-        p.add(l, g);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Arial", Font.BOLD, 13));
+        lbl.setPreferredSize(new Dimension(170, 28));
+        p.add(lbl, g);
         g.gridx = 1; g.weightx = 1; g.fill = GridBagConstraints.HORIZONTAL;
         c.setFont(new Font("Arial", Font.PLAIN, 13));
         c.setPreferredSize(new Dimension(280, 32));
@@ -177,8 +278,7 @@ public class SanPhamGUI extends JPanel {
 
     private JButton taoNut(String text, Color bg, Color fg) {
         JButton b = new JButton(text);
-        b.setBackground(bg);
-        b.setForeground(fg);
+        b.setBackground(bg); b.setForeground(fg);
         b.setFont(new Font("Arial", Font.BOLD, 13));
         b.setFocusPainted(false);
         return b;
