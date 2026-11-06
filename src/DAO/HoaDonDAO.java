@@ -24,10 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DAO cua HoaDon va ChiTietHoaDon.
- * Xu ly doc, them, cap nhat hoa don.
- */
+
 public class HoaDonDAO implements IDAO<HoaDon> {
 
     private String lastError = "";
