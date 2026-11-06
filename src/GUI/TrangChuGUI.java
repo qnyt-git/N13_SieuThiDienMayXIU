@@ -100,7 +100,7 @@ public class TrangChuGUI extends JFrame {
 
         JMenu mnuXuLy = taoMenu("Xử lý");
         mnuXuLy.setForeground(Color.WHITE);
-        taoItem(mnuXuLy, "Bán hàng", "BAN_HANG", "Bán hàng");
+        taoItem(mnuXuLy, "Bán hàng", "BAN_HANG", "Bán hàng & thanh toán");
         taoItem(mnuXuLy, "Bảo hành", "BAO_HANH", "Quản lý bảo hành");
         taoItem(mnuXuLy, "Nhập kho", "NHAP_KHO", "Quản lý nhập kho");
         taoItem(mnuXuLy, "Phân ca", "PHAN_CA", "Quản lý phân ca");
