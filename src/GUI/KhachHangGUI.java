@@ -1,18 +1,24 @@
 package GUI;
 
+import BUS.KhachHangBUS; // Hoặc thay bằng KhachHangDAO nếu bạn gọi trực tiếp DAO
+import ENTITY.KhachHang;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public class KhachHangGUI extends JPanel {
-
-    private DefaultTableModel modelKhachHang;
-    private JTable tblKhachHang;
-    private JTextField txtTimKiem;
-    private JLabel lblCount;
+    private final KhachHangBUS khachHangBUS = new KhachHangBUS();
+    private final DefaultTableModel modelKhachHang;
+    private final JTable tblKhachHang;
+    private final JTextField txtTimKiem;
+    private final JLabel lblCount;
+    private List<KhachHang> danhSachKhachHang = new ArrayList<>();
 
     public KhachHangGUI() {
         setLayout(new BorderLayout(0, 12));
@@ -43,21 +49,17 @@ public class KhachHangGUI extends JPanel {
         buttons.add(btnSua);
         buttons.add(btnXoa);
         buttons.add(btnThem);
-
         bar.add(left, BorderLayout.WEST);
         bar.add(buttons, BorderLayout.EAST);
         top.add(bar, BorderLayout.CENTER);
         add(top, BorderLayout.NORTH);
 
+        // Khớp cấu trúc các cột với thực thể KhachHang mới
         modelKhachHang = new DefaultTableModel(new Object[]{
-                "Mã KH", "Họ tên", "Giới tính", "Số điện thoại", "Điểm tích lũy", "Loại khách hàng"
+                "Mã KH", "Họ tên khách hàng", "Giới tính", "Số điện thoại", "Điểm tích lũy", "Loại KH"
         }, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
-
         tblKhachHang = new JTable(modelKhachHang);
         tblKhachHang.setRowHeight(28);
         tblKhachHang.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -65,107 +67,191 @@ public class KhachHangGUI extends JPanel {
         tblKhachHang.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(tblKhachHang), BorderLayout.CENTER);
 
-        lblCount = new JLabel("Hiển thị 0 bản ghi");
-        lblCount.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblCount = new JLabel("Đang tải dữ liệu...");
         lblCount.setForeground(new Color(100, 116, 139));
         add(lblCount, BorderLayout.SOUTH);
 
-        btnThem.addActionListener(e -> openForm(false));
-        btnSua.addActionListener(e -> {
-            if (kiemTraChonDong()) openForm(true);
+        btnThem.addActionListener(e -> moForm(false));
+        btnSua.addActionListener(e -> moForm(true));
+        btnXoa.addActionListener(e -> xoaKhachHang());
+        txtTimKiem.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { locDuLieu(); }
+            public void removeUpdate(DocumentEvent e) { locDuLieu(); }
+            public void changedUpdate(DocumentEvent e) { locDuLieu(); }
         });
-        btnXoa.addActionListener(e -> xoaDongDangChon());
 
-        tblKhachHang.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && tblKhachHang.getSelectedRow() >= 0) {
-                    openForm(true);
-                }
+        taiDuLieu();
+    }
+
+    private void taiDuLieu() {
+        try {
+            danhSachKhachHang = khachHangBUS.getAll();
+            hienThiDanhSach(danhSachKhachHang);
+            if (danhSachKhachHang.isEmpty()) {
+                lblCount.setText("Hiển thị 0 bản ghi – kiểm tra dữ liệu bảng KhachHang trong SQL Server");
             }
-        });
-    }
-
-    private boolean kiemTraChonDong() {
-        if (tblKhachHang.getSelectedRow() < 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng trong bảng", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
-        return true;
-    }
-
-    private void xoaDongDangChon() {
-        if (!kiemTraChonDong()) return;
-        if (JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa khách hàng đã chọn?", "Xác nhận xóa",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
-            // TODO: Gọi KhachHangDAO xóa dưới CSDL và nạp lại bảng
+        } catch (Exception e) {
+            lblCount.setText("Không tải được dữ liệu khách hàng");
+            JOptionPane.showMessageDialog(this,
+                    "Không thể lấy dữ liệu khách hàng từ SQL Server.\n" + e.getMessage(),
+                    "Lỗi tải dữ liệu", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void openForm(boolean edit) {
-        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this),
-                (edit ? "Cập nhật " : "Thêm mới ") + "quản lý khách hàng", Dialog.ModalityType.APPLICATION_MODAL);
+    private void hienThiDanhSach(List<KhachHang> ds) {
+        modelKhachHang.setRowCount(0);
+        for (KhachHang kh : ds) {
+            modelKhachHang.addRow(new Object[]{
+                    kh.getMaKhachHang(),
+                    kh.getHoTenKhachHang(),
+                    kh.isGioiTinh() ? "Nam" : "Nữ",
+                    kh.getSoDienThoai(),
+                    kh.getDiemTichLuy(),
+                    kh.getLoaiKH()
+            });
+        }
+        lblCount.setText("Hiển thị " + ds.size() + " bản ghi");
+    }
 
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(Color.WHITE);
-        p.setBorder(new EmptyBorder(18, 22, 10, 22));
+    private void locDuLieu() {
+        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
+        List<KhachHang> ketQua = new ArrayList<>();
+        for (KhachHang kh : danhSachKhachHang) {
+            String thongTin = (kh.getMaKhachHang() + " " + kh.getHoTenKhachHang() + " " 
+                    + kh.getSoDienThoai() + " " + kh.getLoaiKH()).toLowerCase();
+            if (thongTin.contains(tuKhoa)) ketQua.add(kh);
+        }
+        hienThiDanhSach(ketQua);
+    }
+
+    private KhachHang khachHangDangChon() {
+        int row = tblKhachHang.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một khách hàng.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return null;
+        }
+        String ma = String.valueOf(modelKhachHang.getValueAt(tblKhachHang.convertRowIndexToModel(row), 0));
+        for (KhachHang kh : danhSachKhachHang) if (kh.getMaKhachHang().equals(ma)) return kh;
+        return null;
+    }
+
+    private void xoaKhachHang() {
+        KhachHang kh = khachHangDangChon();
+        if (kh == null) return;
+        int chon = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn xóa khách hàng " + kh.getHoTenKhachHang() + "?",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (chon == JOptionPane.YES_OPTION) {
+            if (khachHangBUS.delete(kh)) {
+                JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công.");
+                taiDuLieu();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Xóa không thành công. Khách hàng có thể đang có hóa đơn liên quan.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void moForm(boolean sua) {
+        final KhachHang khCu = sua ? khachHangDangChon() : null;
+        if (sua && khCu == null) return;
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
+                sua ? "Cập nhật khách hàng" : "Thêm khách hàng mới", Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(Color.WHITE);
+        form.setBorder(new EmptyBorder(18, 22, 10, 22));
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 4, 6, 4);
         g.anchor = GridBagConstraints.WEST;
 
-        JTextField txtId = new JTextField(24);
-        txtId.setEnabled(false);
-        JTextField txtHoTen = new JTextField(24);
+        JTextField txtMa = new JTextField(sua ? khCu.getMaKhachHang() : khachHangBUS.taoMaMoi(), 22);
+        txtMa.setEditable(false);
+        JTextField txtHoTen = new JTextField(sua ? khCu.getHoTenKhachHang() : "", 22);
         JComboBox<String> cboGioiTinh = new JComboBox<>(new String[]{"Nam", "Nữ"});
-        JTextField txtSdt = new JTextField(24);
-        JTextField txtDiem = new JTextField("0", 24);
-        JComboBox<String> cboLoai = new JComboBox<>(new String[]{"Khách mới", "Khách VIP"});
+        cboGioiTinh.setSelectedItem(sua && !khCu.isGioiTinh() ? "Nữ" : "Nam");
+        
+        JTextField txtSdt = new JTextField(sua ? khCu.getSoDienThoai() : "", 22);
+        JTextField txtDiem = new JTextField(sua ? String.valueOf(khCu.getDiemTichLuy()) : "0", 22);
+        if (sua) txtDiem.setEditable(false); // Thường điểm tích lũy sẽ tự động cộng qua hóa đơn
+        
+        JComboBox<String> cboLoaiKH = new JComboBox<>(new String[]{"Khách mới", "Khách VIP"});
+        if (sua && khCu.getLoaiKH() != null) cboLoaiKH.setSelectedItem(khCu.getLoaiKH());
 
-        // TODO: Nếu edit == true, đổ dữ liệu khách hàng đang chọn lên form
+        themDong(form, g, 0, "Mã khách hàng", txtMa);
+        themDong(form, g, 1, "Họ tên KH *", txtHoTen);
+        themDong(form, g, 2, "Giới tính *", cboGioiTinh);
+        themDong(form, g, 3, "Số điện thoại *", txtSdt);
+        themDong(form, g, 4, "Điểm tích lũy", txtDiem);
+        themDong(form, g, 5, "Loại khách hàng *", cboLoaiKH);
 
-        addRow(p, g, 0, "Mã KH (tự động)", txtId);
-        addRow(p, g, 1, "Họ tên *", txtHoTen);
-        addRow(p, g, 2, "Giới tính *", cboGioiTinh);
-        addRow(p, g, 3, "Số điện thoại *", txtSdt);
-        addRow(p, g, 4, "Điểm tích lũy *", txtDiem);
-        addRow(p, g, 5, "Loại khách hàng *", cboLoai);
-
-        JLabel err = new JLabel(" ");
-        err.setForeground(new Color(220, 38, 38));
+        JLabel lblLoi = new JLabel(" ");
+        lblLoi.setForeground(Color.RED);
         JButton btnLuu = taoNut("Lưu", new Color(14, 98, 195), Color.WHITE);
         JButton btnHuy = taoNut("Hủy", Color.WHITE, new Color(14, 98, 195));
-        btnHuy.addActionListener(e -> d.dispose());
+        btnHuy.addActionListener(e -> dialog.dispose());
 
         btnLuu.addActionListener(e -> {
-            // TODO: Kiểm tra hợp lệ và gọi KhachHangDAO lưu vào CSDL
-            d.dispose();
+            try {
+                String hoTen = txtHoTen.getText().trim();
+                String sdt = txtSdt.getText().trim();
+                if (hoTen.isEmpty() || sdt.isEmpty()) {
+                    throw new IllegalArgumentException("Vui lòng điền đầy đủ họ tên và số điện thoại.");
+                }
+                if (!sdt.matches("0[0-9]{9}")) {
+                    throw new IllegalArgumentException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.");
+                }
+                int diem = Integer.parseInt(txtDiem.getText().trim());
+
+                KhachHang kh = new KhachHang(
+                        txtMa.getText().trim(),
+                        hoTen,
+                        "Nam".equals(cboGioiTinh.getSelectedItem()),
+                        sdt,
+                        diem,
+                        String.valueOf(cboLoaiKH.getSelectedItem())
+                );
+
+                boolean thanhCong = sua ? khachHangBUS.update(kh) : khachHangBUS.insert(kh);
+                if (thanhCong) {
+                    JOptionPane.showMessageDialog(dialog, sua ? "Cập nhật thành công." : "Thêm mới thành công.");
+                    dialog.dispose();
+                    taiDuLieu();
+                } else {
+                    lblLoi.setText("Lưu thất bại. Kiểm tra lại dữ liệu hoặc kết nối CSDL.");
+                }
+            } catch (NumberFormatException ex) {
+                lblLoi.setText("Điểm tích lũy phải là số nguyên hợp lệ.");
+            } catch (IllegalArgumentException ex) {
+                lblLoi.setText(ex.getMessage());
+            }
         });
 
-        JPanel south = new JPanel(new BorderLayout());
-        south.setBackground(Color.WHITE);
-        south.setBorder(new EmptyBorder(0, 22, 16, 22));
-        JPanel bt = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        bt.setBackground(Color.WHITE);
-        bt.add(btnHuy);
-        bt.add(btnLuu);
-        south.add(err, BorderLayout.NORTH);
-        south.add(bt, BorderLayout.SOUTH);
-
-        d.getRootPane().setDefaultButton(btnLuu);
-        d.add(p, BorderLayout.CENTER);
-        d.add(south, BorderLayout.SOUTH);
-        d.pack();
-        d.setMinimumSize(new Dimension(480, 0));
-        d.setLocationRelativeTo(this);
-        d.setVisible(true);
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.setBackground(Color.WHITE);
+        bottom.setBorder(new EmptyBorder(0, 22, 16, 22));
+        JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        nut.setBackground(Color.WHITE);
+        nut.add(btnHuy);
+        nut.add(btnLuu);
+        bottom.add(lblLoi, BorderLayout.NORTH);
+        bottom.add(nut, BorderLayout.SOUTH);
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(bottom, BorderLayout.SOUTH);
+        dialog.getRootPane().setDefaultButton(btnLuu);
+        dialog.pack();
+        dialog.setMinimumSize(new Dimension(500, 380));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
-    private void addRow(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
+    private void themDong(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
         g.gridy = row; g.gridx = 0; g.weightx = 0; g.fill = GridBagConstraints.NONE;
-        JLabel l = new JLabel(label);
-        l.setFont(new Font("Arial", Font.BOLD, 13));
-        l.setPreferredSize(new Dimension(150, 28));
-        p.add(l, g);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Arial", Font.BOLD, 13));
+        lbl.setPreferredSize(new Dimension(150, 28));
+        p.add(lbl, g);
         g.gridx = 1; g.weightx = 1; g.fill = GridBagConstraints.HORIZONTAL;
         c.setFont(new Font("Arial", Font.PLAIN, 13));
         c.setPreferredSize(new Dimension(280, 32));
@@ -174,8 +260,7 @@ public class KhachHangGUI extends JPanel {
 
     private JButton taoNut(String text, Color bg, Color fg) {
         JButton b = new JButton(text);
-        b.setBackground(bg);
-        b.setForeground(fg);
+        b.setBackground(bg); b.setForeground(fg);
         b.setFont(new Font("Arial", Font.BOLD, 13));
         b.setFocusPainted(false);
         return b;
