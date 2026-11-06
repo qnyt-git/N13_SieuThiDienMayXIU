@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** DAO của TaiKhoanNhanVien (bảng TaiKhoanNhanVien). Cột loaiQuyen lưu tên hằng enum. */
+
 public class TaiKhoanNhanVienDAO implements IDAO<TaiKhoanNhanVien> {
 
     private static LoaiQuyen docQuyen(String s) {
