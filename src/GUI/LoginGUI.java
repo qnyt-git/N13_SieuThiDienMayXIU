@@ -5,7 +5,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
+import DAO.NhanVienDAO;
+import ENTITY.NhanVien;
 public class LoginGUI extends JFrame {
     private JTextField txtTaiKhoan;
     private JPasswordField txtMatKhau;
@@ -155,18 +156,53 @@ public class LoginGUI extends JFrame {
                 String[] thongTin = dao.kiemTraDangNhap(tenDangNhap, matKhau);
 
                 if (thongTin != null) {
-                    // Đăng nhập thành công -> Đóng form đăng nhập, chuyển thẳng qua TrangChuGUI
+
+                    // Lay thong tin dang nhap
+                    String maNV = thongTin[0];
+                    String hoTenNhanVien = thongTin[1];
+                    String quyen = thongTin[2];
+
+                    // Tim nhan vien dang dang nhap
+                    NhanVien nhanVienDangNhap = null;
+                    NhanVienDAO nhanVienDAO = new NhanVienDAO();
+
+                    for (NhanVien nv : nhanVienDAO.getAll()) {
+                        if (nv.getMaNhanVien() != null
+                                && nv.getMaNhanVien().equals(maNV)) {
+                            nhanVienDangNhap = nv;
+                            break;
+                        }
+                    }
+
+                    // Kiem tra nhan vien
+                    if (nhanVienDangNhap == null) {
+                        JOptionPane.showMessageDialog(
+                            LoginGUI.this,
+                            "Khong tim thay thong tin nhan vien!",
+                            "Loi dang nhap",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        return;
+                    }
+
+                    // Dang nhap thanh cong
                     dispose();
-                    
-                    String hoTenNhanVien = thongTin[0];
-                    String quyen = thongTin[1];
-                    
-                    // Khởi tạo trang chủ và truyền thông tin thực tế từ database vào
-                    new TrangChuGUI(hoTenNhanVien, quyen).setVisible(true);
-                    
+
+                    new TrangChuGUI(
+                        nhanVienDangNhap,
+                        hoTenNhanVien,
+                        quyen
+                    ).setVisible(true);
+
                 } else {
-                    // Đăng nhập thất bại (Sai tài khoản, mật khẩu hoặc tài khoản bị khóa)
-                    JOptionPane.showMessageDialog(LoginGUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+
+                    JOptionPane.showMessageDialog(
+                        LoginGUI.this,
+                        "Ten dang nhap hoac mat khau khong dung!",
+                        "Loi dang nhap",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+
                     txtTaiKhoan.requestFocus();
                     txtTaiKhoan.selectAll();
                 }
