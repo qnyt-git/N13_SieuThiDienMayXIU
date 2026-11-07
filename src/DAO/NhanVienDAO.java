@@ -1,86 +1,69 @@
 package DAO;
 
+import CONNECTDB.ConnectDB;
 import ENTITY.NhanVien;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * DAO của NhanVien.
+ * Bao gồm các thao tác CSDL (insert, update, delete, getAll, taoMaMoi)
+ * và toàn bộ các phương thức xử lý nghiệp vụ, tính lương, kiểm tra tuổi được chuyển từ Entity qua.
+ */
 public class NhanVienDAO implements IDAO<NhanVien> {
-
-    private static NhanVien mapNhanVien(ResultSet rs) throws SQLException {
-        java.sql.Date ns = rs.getDate("ngaySinh");
-        return new NhanVien(
-                rs.getString("maNhanVien"),
-                rs.getString("hoTenNhanVien"),
-                rs.getBoolean("gioiTinh"),
-                rs.getString("chucVu"),
-                rs.getString("soDienThoai"),
-                ns == null ? null : ns.toLocalDate(),
-                rs.getString("trinhDoHocVan"),
-                rs.getFloat("heSoLuong"),
-                rs.getInt("luongCoBan"),
-                rs.getBoolean("trangThai"));
-    }
-
-    private static java.sql.Date toSqlDate(NhanVien n) {
-        return n.getNgaySinh() == null ? null : java.sql.Date.valueOf(n.getNgaySinh());
-    }
 
     @Override
     public List<NhanVien> getAll() {
-        List<NhanVien> ds = new ArrayList<>();
-        String sql = "SELECT maNhanVien, hoTenNhanVien, gioiTinh, chucVu, soDienThoai, ngaySinh, trinhDoHocVan, heSoLuong, luongCoBan, trangThai "
-                + "FROM NhanVien ORDER BY maNhanVien";
-
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql);
+        List<NhanVien> list = new ArrayList<>();
+        String sql = "SELECT maNhanVien, hoTenNhanVien, gioiTinh, soDienThoai, ngaySinh, trinhDoHocVan, chucVu, heSoLuong, luongCoBan, trangThai FROM NhanVien";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
             while (rs.next()) {
-                ds.add(mapNhanVien(rs));
+                NhanVien nv = new NhanVien();
+                nv.setMaNhanVien(rs.getString("maNhanVien"));
+                nv.setHoTenNhanVien(rs.getString("hoTenNhanVien"));
+                nv.setGioiTinh(rs.getBoolean("gioiTinh"));
+                nv.setChucVu(rs.getString("chucVu"));
+                nv.setSoDienThoai(rs.getString("soDienThoai"));
+                
+                Date ns = rs.getDate("ngaySinh");
+                if (ns != null) nv.setNgaySinh(ns.toLocalDate());
+                
+                nv.setTrinhDoHocVan(rs.getString("trinhDoHocVan"));
+                nv.setHeSoLuong(rs.getFloat("heSoLuong"));
+                nv.setLuongCoBan(rs.getInt("luongCoBan"));
+                nv.setTrangThai(rs.getBoolean("trangThai"));
+                list.add(nv);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ds;
-    }
-
-    /** Tìm nhân viên theo mã; null nếu không có. */
-    public NhanVien timTheoMa(String maNhanVien) throws SQLException {
-        String sql = "SELECT maNhanVien, hoTenNhanVien, gioiTinh, chucVu, soDienThoai, ngaySinh, trinhDoHocVan, heSoLuong, luongCoBan, trangThai "
-                + "FROM NhanVien WHERE maNhanVien = ?";
-
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-            ps.setString(1, maNhanVien);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapNhanVien(rs);
-                }
-                return null;
-            }
-        }
+        return list;
     }
 
     @Override
-    public boolean them(NhanVien n) {
-        String sql = "INSERT INTO NhanVien(maNhanVien, hoTenNhanVien, gioiTinh, chucVu, soDienThoai, ngaySinh, trinhDoHocVan, heSoLuong, "
-                + "luongCoBan, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-            ps.setString(1, n.getMaNhanVien());
-            ps.setString(2, n.getHoTenNhanVien());
-            ps.setBoolean(3, n.isGioiTinh());
-            ps.setString(4, n.getChucVu());
-            ps.setString(5, n.getSoDienThoai());
-            ps.setDate(6, toSqlDate(n));
-            ps.setString(7, n.getTrinhDoHocVan());
-            ps.setDouble(8, n.getHeSoLuong());
-            ps.setInt(9, n.getLuongCoBan());
-            ps.setBoolean(10, n.isTrangThai());
+    public boolean insert(NhanVien nv) {
+        String sql = "INSERT INTO NhanVien(maNhanVien, hoTenNhanVien, gioiTinh, chucVu, soDienThoai, ngaySinh, trinhDoHocVan, heSoLuong, luongCoBan, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nv.getMaNhanVien());
+            ps.setString(2, nv.getHoTenNhanVien());
+            ps.setBoolean(3, nv.isGioiTinh());
+            ps.setString(4, nv.getChucVu());
+            ps.setString(5, nv.getSoDienThoai());
+            ps.setDate(6, nv.getNgaySinh() != null ? Date.valueOf(nv.getNgaySinh()) : null);
+            ps.setString(7, nv.getTrinhDoHocVan());
+            ps.setFloat(8, nv.getHeSoLuong());
+            ps.setInt(9, nv.getLuongCoBan());
+            ps.setBoolean(10, nv.isTrangThai());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,21 +72,20 @@ public class NhanVienDAO implements IDAO<NhanVien> {
     }
 
     @Override
-    public boolean capNhat(NhanVien n) {
-        String sql = "UPDATE NhanVien SET hoTenNhanVien = ?, gioiTinh = ?, chucVu = ?, soDienThoai = ?, ngaySinh = ?, "
-                + "trinhDoHocVan = ?, heSoLuong = ?, luongCoBan = ?, trangThai = ? WHERE maNhanVien = ?";
-
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-        	ps.setString(1, n.getHoTenNhanVien());
-            ps.setBoolean(2, n.isGioiTinh());
-            ps.setString(3, n.getChucVu());
-            ps.setString(4, n.getSoDienThoai());
-            ps.setDate(5, toSqlDate(n));
-            ps.setString(6, n.getTrinhDoHocVan());
-            ps.setDouble(7, n.getHeSoLuong());
-            ps.setInt(8, n.getLuongCoBan());
-            ps.setBoolean(9, n.isTrangThai());
-            ps.setString(10, n.getMaNhanVien());
+    public boolean update(NhanVien nv) {
+        String sql = "UPDATE NhanVien SET hoTenNhanVien = ?, gioiTinh = ?, chucVu = ?, soDienThoai = ?, ngaySinh = ?, trinhDoHocVan = ?, heSoLuong = ?, luongCoBan = ?, trangThai = ? WHERE maNhanVien = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nv.getHoTenNhanVien());
+            ps.setBoolean(2, nv.isGioiTinh());
+            ps.setString(3, nv.getChucVu());
+            ps.setString(4, nv.getSoDienThoai());
+            ps.setDate(5, nv.getNgaySinh() != null ? Date.valueOf(nv.getNgaySinh()) : null);
+            ps.setString(6, nv.getTrinhDoHocVan());
+            ps.setFloat(7, nv.getHeSoLuong());
+            ps.setInt(8, nv.getLuongCoBan());
+            ps.setBoolean(9, nv.isTrangThai());
+            ps.setString(10, nv.getMaNhanVien());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,11 +94,11 @@ public class NhanVienDAO implements IDAO<NhanVien> {
     }
 
     @Override
-    public boolean xoa(NhanVien n) {
+    public boolean delete(NhanVien nv) {
         String sql = "DELETE FROM NhanVien WHERE maNhanVien = ?";
-
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-            ps.setString(1, n.getMaNhanVien());
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nv.getMaNhanVien());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -128,13 +110,66 @@ public class NhanVienDAO implements IDAO<NhanVien> {
     public String taoMaMoi() {
         int max = 0;
         String sql = "SELECT MAX(TRY_CAST(SUBSTRING(maNhanVien, 3, 10) AS INT)) FROM NhanVien";
-
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql);
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) max = rs.getInt(1);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return String.format("NV%03d", max + 1);
+        return String.format("NV%02d", max + 1);
+    }
+
+    // ===================== CÁC PHƯƠNG THỨC XỬ LÝ (CHUYỂN TỪ ENTITY QUA) =====================
+
+    /** Tính lương */
+    public double tinhLuong(NhanVien nv) {
+        if (nv == null) return 0;
+        return nv.getHeSoLuong() * nv.getLuongCoBan();
+    }
+
+    /** Kiểm tra còn làm việc */
+    public boolean conLamViec(NhanVien nv) { 
+        return nv != null && nv.isTrangThai(); 
+    }
+
+    /** Nghỉ việc */
+    public void nghiViec(NhanVien nv) { 
+        if (nv != null) nv.setTrangThai(false); 
+    }
+
+    /** Cập nhật thông tin cá nhân */
+    public void capNhatThongTin(NhanVien nv, String hoTen, String sdt, LocalDate ngaySinh) {
+        if (nv == null) return;
+        if (hoTen != null && !hoTen.isEmpty()) nv.setHoTenNhanVien(hoTen);
+        if (sdt != null && !sdt.isEmpty()) nv.setSoDienThoai(sdt);
+        if (ngaySinh != null) nv.setNgaySinh(ngaySinh);
+    }
+
+    /** Đăng ký ca (placeholder) */
+    public void dangKyCaLam(NhanVien nv) {
+        // sẽ được xử lý bởi PhanCa
+    }
+
+    /** Tuổi tính đến hôm nay. */
+    public int tuoi(NhanVien nv) {
+        if (nv == null || nv.getNgaySinh() == null) return 0;
+        return Period.between(nv.getNgaySinh(), LocalDate.now()).getYears();
+    }
+
+    /** Ngày sinh hợp lệ: không ở tương lai và đủ 18 tuổi. */
+    public boolean hopLeNgaySinh(NhanVien nv) {
+        if (nv == null || nv.getNgaySinh() == null) return false;
+        return !nv.getNgaySinh().isAfter(LocalDate.now()) && tuoi(nv) >= 18;
+    }
+
+    public String trangThaiText(NhanVien nv) { 
+        return nv != null && nv.isTrangThai() ? "Đang làm" : "Nghỉ việc"; 
+    }
+
+    /** Hệ số lương dạng double (tránh sai số float). */
+    public double heSoLuongDouble(NhanVien nv) { 
+        if (nv == null) return 0;
+        return Double.parseDouble(Float.toString(nv.getHeSoLuong())); 
     }
 }
