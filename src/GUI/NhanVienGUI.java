@@ -2,6 +2,8 @@ package GUI;
 
 import DAO.NhanVienDAO;
 import ENTITY.NhanVien;
+import ENTITY.ChucVu;
+import BUS.ChucVuBUS;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,6 +13,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import com.toedter.calendar.JDateChooser;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +25,7 @@ public class NhanVienGUI extends JPanel {
     private final JTextField txtTimKiem;
     private final JLabel lblCount;
     private List<NhanVien> danhSachNhanVien = new ArrayList<>();
+    private final ChucVuBUS chucVuBUS = new ChucVuBUS();
 
     public NhanVienGUI() {
         setLayout(new BorderLayout(0, 12));
@@ -105,11 +110,16 @@ public class NhanVienGUI extends JPanel {
         for (NhanVien nv : ds) {
             modelNhanVien.addRow(new Object[]{
                     nv.getMaNhanVien(), nv.getHoTenNhanVien(), nv.isGioiTinh() ? "Nam" : "Nữ",
-                    nv.getChucVu(), nv.getSoDienThoai(), nv.getNgaySinh(), nv.getTrinhDoHocVan(),
+                    tenChucVu(nv.getChucVu()), nv.getSoDienThoai(), nv.getNgaySinh(), nv.getTrinhDoHocVan(),
                     nv.getHeSoLuong(), nv.getLuongCoBan(), nv.isTrangThai() ? "Đang làm" : "Nghỉ việc"
             });
         }
         lblCount.setText("Hiển thị " + ds.size() + " bản ghi");
+    }
+
+    private String tenChucVu(String maChucVu) {
+        for (ChucVu cv : chucVuBUS.getAll()) if (cv.getMaChucVu().equals(maChucVu)) return cv.getTenChucVu();
+        return maChucVu == null ? "" : maChucVu;
     }
 
     private void locDuLieu() {
@@ -142,7 +152,7 @@ public class NhanVienGUI extends JPanel {
                 "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (chon == JOptionPane.YES_OPTION) {
             if (nhanVienDAO.delete(nv)) {
-                JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công.");
+                JOptionPane.showMessageDialog(this, "Đã chuyển nhân viên sang trạng thái nghỉ việc.");
                 taiDuLieu();
             } else {
                 JOptionPane.showMessageDialog(this,
@@ -170,10 +180,21 @@ public class NhanVienGUI extends JPanel {
         JTextField txtHoTen = new JTextField(sua ? nvCu.getHoTenNhanVien() : "", 22);
         JComboBox<String> cboGioiTinh = new JComboBox<>(new String[]{"Nam", "Nữ"});
         cboGioiTinh.setSelectedItem(sua && !nvCu.isGioiTinh() ? "Nữ" : "Nam");
-        JComboBox<String> cboChucVu = new JComboBox<>(new String[]{"QUAN_LY", "BAN_HANG", "THU_NGAN", "CSKH", "KHO", "KE_TOAN"});
-        if (sua && nvCu.getChucVu() != null) cboChucVu.setSelectedItem(nvCu.getChucVu());
+        java.util.List<ChucVu> dsChucVu = chucVuBUS.getAll();
+        JComboBox<ChucVu> cboChucVu = new JComboBox<>(dsChucVu.toArray(new ChucVu[0]));
+        cboChucVu.setRenderer(new DefaultListCellRenderer() {
+            @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected, boolean focus) {
+                super.getListCellRendererComponent(list, value, index, selected, focus);
+                if (value instanceof ChucVu) setText(((ChucVu) value).getTenChucVu());
+                return this;
+            }
+        });
+        if (sua && nvCu.getChucVu() != null) for (ChucVu cv : dsChucVu) if (cv.getMaChucVu().equals(nvCu.getChucVu())) cboChucVu.setSelectedItem(cv);
         JTextField txtSdt = new JTextField(sua ? nvCu.getSoDienThoai() : "", 22);
-        JTextField txtNgaySinh = new JTextField(sua && nvCu.getNgaySinh() != null ? nvCu.getNgaySinh().toString() : "", 22);
+        JDateChooser txtNgaySinh = new JDateChooser();
+        txtNgaySinh.setDateFormatString("dd/MM/yyyy");
+        if (sua && nvCu.getNgaySinh() != null) txtNgaySinh.setDate(java.sql.Date.valueOf(nvCu.getNgaySinh()));
+        else txtNgaySinh.setDate(java.sql.Date.valueOf(LocalDate.now().minusYears(18)));
         JTextField txtTrinhDo = new JTextField(sua ? nvCu.getTrinhDoHocVan() : "", 22);
         JTextField txtHeSo = new JTextField(sua ? String.valueOf(nvCu.getHeSoLuong()) : "", 22);
         JTextField txtLuong = new JTextField(sua ? String.valueOf(nvCu.getLuongCoBan()) : "", 22);
@@ -185,7 +206,7 @@ public class NhanVienGUI extends JPanel {
         themDong(form, g, 2, "Giới tính *", cboGioiTinh);
         themDong(form, g, 3, "Chức vụ *", cboChucVu);
         themDong(form, g, 4, "Số điện thoại *", txtSdt);
-        themDong(form, g, 5, "Ngày sinh (yyyy-MM-dd) *", txtNgaySinh);
+        themDong(form, g, 5, "Ngày sinh *", txtNgaySinh);
         themDong(form, g, 6, "Trình độ học vấn", txtTrinhDo);
         themDong(form, g, 7, "Hệ số lương *", txtHeSo);
         themDong(form, g, 8, "Lương cơ bản *", txtLuong);
@@ -200,12 +221,15 @@ public class NhanVienGUI extends JPanel {
             try {
                 String hoTen = txtHoTen.getText().trim();
                 String sdt = txtSdt.getText().trim();
-                if (hoTen.isEmpty() || sdt.isEmpty() || txtNgaySinh.getText().trim().isEmpty()
+                if (hoTen.isEmpty() || sdt.isEmpty() || txtNgaySinh.getDate() == null
                         || txtHeSo.getText().trim().isEmpty() || txtLuong.getText().trim().isEmpty()) {
                     throw new IllegalArgumentException("Vui lòng nhập đầy đủ các trường bắt buộc.");
                 }
-                if (!sdt.matches("0[0-9]{9}")) throw new IllegalArgumentException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.");
-                LocalDate ngaySinh = LocalDate.parse(txtNgaySinh.getText().trim());
+                if (!hoTen.matches("[\\p{L}]+([ \u0027-][\\p{L}]+)*")) throw new IllegalArgumentException("Họ tên chỉ được chứa chữ, khoảng trắng; mỗi từ viết hoa chữ cái đầu.");
+                if (!hoTen.matches("[\\p{Lu}][\\p{L}]*([ \u0027-][\\p{Lu}][\\p{L}]*)*")) throw new IllegalArgumentException("Họ tên phải viết hoa chữ cái đầu mỗi từ.");
+                if (!sdt.matches("0[0-9]{9}")) throw new IllegalArgumentException("Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.");
+                if (cboChucVu.getSelectedItem() == null) throw new IllegalArgumentException("Vui lòng thêm/chọn chức vụ.");
+                LocalDate ngaySinh = new java.sql.Date(txtNgaySinh.getDate().getTime()).toLocalDate();
                 if (ngaySinh.isAfter(LocalDate.now()) || ngaySinh.plusYears(18).isAfter(LocalDate.now()))
                     throw new IllegalArgumentException("Nhân viên phải đủ 18 tuổi và ngày sinh không được ở tương lai.");
                 float heSo = Float.parseFloat(txtHeSo.getText().trim());
@@ -214,7 +238,7 @@ public class NhanVienGUI extends JPanel {
 
                 NhanVien nv = new NhanVien(txtMa.getText().trim(), hoTen,
                         "Nam".equals(cboGioiTinh.getSelectedItem()), sdt, ngaySinh,
-                        txtTrinhDo.getText().trim(), String.valueOf(cboChucVu.getSelectedItem()),
+                        txtTrinhDo.getText().trim(), ((ChucVu) cboChucVu.getSelectedItem()).getMaChucVu(),
                         heSo, luong, "Đang làm".equals(cboTrangThai.getSelectedItem()));
                 boolean thanhCong = sua ? nhanVienDAO.update(nv) : nhanVienDAO.insert(nv);
                 if (thanhCong) {
@@ -224,8 +248,6 @@ public class NhanVienGUI extends JPanel {
                 } else {
                     lblLoi.setText("Không lưu được dữ liệu. Kiểm tra Console hoặc ràng buộc SQL.");
                 }
-            } catch (DateTimeParseException ex) {
-                lblLoi.setText("Ngày sinh phải đúng định dạng yyyy-MM-dd.");
             } catch (NumberFormatException ex) {
                 lblLoi.setText("Hệ số lương và lương cơ bản phải là số hợp lệ.");
             } catch (IllegalArgumentException ex) {
