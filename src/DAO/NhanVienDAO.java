@@ -12,17 +12,13 @@ import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO của NhanVien.
- * Bao gồm các thao tác CSDL (insert, update, delete, getAll, taoMaMoi)
- * và toàn bộ các phương thức xử lý nghiệp vụ, tính lương, kiểm tra tuổi được chuyển từ Entity qua.
- */
+
 public class NhanVienDAO implements IDAO<NhanVien> {
 
     @Override
     public List<NhanVien> getAll() {
         List<NhanVien> list = new ArrayList<>();
-        String sql = "SELECT maNhanVien, hoTenNhanVien, gioiTinh, soDienThoai, ngaySinh, trinhDoHocVan, chucVu, heSoLuong, luongCoBan, trangThai FROM NhanVien";
+        String sql = "SELECT maNhanVien, hoTenNhanVien, gioiTinh, soDienThoai, ngaySinh, trinhDoHocVan, maChucVu AS chucVu, heSoLuong, luongCoBan, trangThai FROM NhanVien";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -51,7 +47,7 @@ public class NhanVienDAO implements IDAO<NhanVien> {
 
     @Override
     public boolean insert(NhanVien nv) {
-        String sql = "INSERT INTO NhanVien(maNhanVien, hoTenNhanVien, gioiTinh, chucVu, soDienThoai, ngaySinh, trinhDoHocVan, heSoLuong, luongCoBan, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO NhanVien(maNhanVien, hoTenNhanVien, gioiTinh, maChucVu, soDienThoai, ngaySinh, trinhDoHocVan, heSoLuong, luongCoBan, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, nv.getMaNhanVien());
@@ -73,7 +69,7 @@ public class NhanVienDAO implements IDAO<NhanVien> {
 
     @Override
     public boolean update(NhanVien nv) {
-        String sql = "UPDATE NhanVien SET hoTenNhanVien = ?, gioiTinh = ?, chucVu = ?, soDienThoai = ?, ngaySinh = ?, trinhDoHocVan = ?, heSoLuong = ?, luongCoBan = ?, trangThai = ? WHERE maNhanVien = ?";
+        String sql = "UPDATE NhanVien SET hoTenNhanVien = ?, gioiTinh = ?, maChucVu = ?, soDienThoai = ?, ngaySinh = ?, trinhDoHocVan = ?, heSoLuong = ?, luongCoBan = ?, trangThai = ? WHERE maNhanVien = ?";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, nv.getHoTenNhanVien());
@@ -95,11 +91,29 @@ public class NhanVienDAO implements IDAO<NhanVien> {
 
     @Override
     public boolean delete(NhanVien nv) {
-        String sql = "DELETE FROM NhanVien WHERE maNhanVien = ?";
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nv.getMaNhanVien());
-            return ps.executeUpdate() > 0;
+        // Khong xoa vat ly vi nhan vien co the duoc tham chieu boi hoa don/phieu/lich su.
+        // Chuyen nhan vien va tai khoan sang trang thai khong hoat dong.
+        String sqlNV = "UPDATE NhanVien SET trangThai = 0 WHERE maNhanVien = ?";
+        String sqlTK = "UPDATE TaiKhoanNhanVien SET trangThai = 0 WHERE maNhanVien = ?";
+        try (Connection con = ConnectDB.getConnection()) {
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(sqlNV);
+                 PreparedStatement psTK = con.prepareStatement(sqlTK)) {
+                ps.setString(1, nv.getMaNhanVien());
+                int dongCapNhat = ps.executeUpdate();
+                psTK.setString(1, nv.getMaNhanVien());
+                psTK.executeUpdate();
+                if (dongCapNhat > 0) {
+                    con.commit();
+                    return true;
+                }
+                con.rollback();
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
