@@ -3,159 +3,157 @@ package GUI;
 import DAO.KhachHangDAO;
 import DAO.PhieuBaoHanhDAO;
 import DAO.SanPhamDAO;
-import ENTITY.ChiTietPhieuBaoHanh;
-import ENTITY.KhachHang;
-import ENTITY.NhanVien;
-import ENTITY.PhieuBaoHanh;
-import ENTITY.SanPham;
+import ENTITY.*;
 import ENUM.TrangThaiPhieuBaoHanh;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class BaoHanhGUI extends JPanel {
-    private final PhieuBaoHanhDAO pbhDAO = new PhieuBaoHanhDAO();
-    private final KhachHangDAO khachHangDAO = new KhachHangDAO();
-    private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
+    private final PhieuBaoHanhDAO dao = new PhieuBaoHanhDAO();
+    private final KhachHangDAO khDAO = new KhachHangDAO();
+    private final SanPhamDAO spDAO = new SanPhamDAO();
+    private final NhanVien nhanVienDangNhap;
+    private DefaultTableModel model;
+    private JTable table;
 
-    private DefaultTableModel modelPBH;
-    private JTable tblPBH;
-
-    public BaoHanhGUI() {
+    public BaoHanhGUI(NhanVien nhanVienDangNhap) {
+        this.nhanVienDangNhap = nhanVienDangNhap;
         setLayout(new BorderLayout(0, 12));
         setBackground(new Color(245, 247, 250));
         setBorder(new EmptyBorder(18, 22, 18, 22));
 
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
-        JLabel lblTieuDe = new JLabel("Quản lý tiếp nhận & xử lý bảo hành");
-        lblTieuDe.setFont(new Font("Arial", Font.BOLD, 20));
-        lblTieuDe.setForeground(new Color(20, 40, 70));
-        top.add(lblTieuDe, BorderLayout.WEST);
+        JLabel title = new JLabel("Quản lý tiếp nhận & xử lý bảo hành");
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        top.add(title, BorderLayout.WEST);
 
-        JButton btnTaoPhieu = taoNut("+ Lập phiếu bảo hành", new Color(14, 98, 195), Color.WHITE);
-        JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        pnlBtn.setOpaque(false);
-        pnlBtn.add(btnTaoPhieu);
-        top.add(pnlBtn, BorderLayout.EAST);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttons.setOpaque(false);
+        JButton add = nut("+ Lập phiếu bảo hành");
+        JButton edit = nut("Sửa phiếu");
+        JButton delete = nut("Xóa phiếu");
+        buttons.add(add); buttons.add(edit); buttons.add(delete);
+        top.add(buttons, BorderLayout.EAST);
         add(top, BorderLayout.NORTH);
 
-        modelPBH = new DefaultTableModel(new Object[]{
-                "Mã phiếu BH", "Khách hàng", "Nhân viên tiếp nhận", "Ngày tiếp nhận", "Ngày hẹn trả", "Trạng thái"
-        }, 0) {
-            @Override public boolean isCellEditable(int row, int column) { return false; }
+        model = new DefaultTableModel(new Object[]{"Mã phiếu BH","Khách hàng","Nhân viên tiếp nhận","Ngày tiếp nhận","Ngày hẹn trả","Trạng thái"},0) {
+            public boolean isCellEditable(int r,int c){ return false; }
         };
-        tblPBH = new JTable(modelPBH);
-        tblPBH.setRowHeight(28);
-        add(new JScrollPane(tblPBH), BorderLayout.CENTER);
+        table = new JTable(model);
+        table.setRowHeight(28);
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
-        btnTaoPhieu.addActionListener(e -> moFormLapPhieu());
+        add.addActionListener(e -> moForm(null));
+        edit.addActionListener(e -> {
+            PhieuBaoHanh p = getSelected();
+            if (p != null) moForm(p);
+        });
+        delete.addActionListener(e -> xoaPhieu());
         taiDuLieu();
     }
 
+    private List<PhieuBaoHanh> danhSach = new ArrayList<>();
+
     private void taiDuLieu() {
-        modelPBH.setRowCount(0);
-        List<PhieuBaoHanh> list = pbhDAO.getAll();
-        for (PhieuBaoHanh p : list) {
-            modelPBH.addRow(new Object[]{
-                    p.getMaPhieubaoHanh(),
-                    p.getMaKhachHang() != null ? p.getMaKhachHang().getHoTenKhachHang() : "",
-                    p.getMaNhanVien() != null ? p.getMaNhanVien().getHoTenNhanVien() : "",
-                    p.getNgayTiepNhan(),
-                    p.getNgayHenTra(),
-                    p.getTrangThai() != null ? p.getTrangThai().getMoTa() : ""
-            });
+        model.setRowCount(0);
+        danhSach = dao.getAll();
+        for (PhieuBaoHanh p : danhSach) {
+            model.addRow(new Object[]{p.getMaPhieubaoHanh(),
+                p.getMaKhachHang()!=null?p.getMaKhachHang().getHoTenKhachHang():"",
+                p.getMaNhanVien()!=null?p.getMaNhanVien().getHoTenNhanVien():"",
+                p.getNgayTiepNhan(),p.getNgayHenTra(),
+                p.getTrangThai()!=null?p.getTrangThai().getMoTa():""});
         }
     }
 
-    private void moFormLapPhieu() {
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Lập phiếu bảo hành mới", Dialog.ModalityType.APPLICATION_MODAL);
+    private PhieuBaoHanh getSelected() {
+        int row = table.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this,"Vui lòng chọn phiếu bảo hành."); return null; }
+        return danhSach.get(table.convertRowIndexToModel(row));
+    }
+
+    private void moForm(PhieuBaoHanh cu) {
+        boolean sua = cu != null;
+        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), sua?"Cập nhật phiếu bảo hành":"Lập phiếu bảo hành mới", Dialog.ModalityType.APPLICATION_MODAL);
         JPanel form = new JPanel(new GridBagLayout());
         form.setBackground(Color.WHITE);
-        form.setBorder(new EmptyBorder(18, 22, 10, 22));
+        form.setBorder(new EmptyBorder(16,20,12,20));
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 4, 6, 4);
-        g.anchor = GridBagConstraints.WEST;
+        g.insets = new Insets(6,5,6,5); g.fill = GridBagConstraints.HORIZONTAL; g.anchor = GridBagConstraints.WEST;
 
-        JTextField txtMa = new JTextField(pbhDAO.taoMaMoi(), 22);
-        txtMa.setEditable(false);
+        JTextField ma = new JTextField(sua?cu.getMaPhieubaoHanh():dao.taoMaMoi(),22); ma.setEditable(false);
+        JComboBox<KhachHang> kh = new JComboBox<>(khDAO.getAll().toArray(new KhachHang[0]));
+        JComboBox<SanPham> sp = new JComboBox<>(spDAO.getAll().toArray(new SanPham[0]));
+        hienThiKhachHang(kh); hienThiSanPham(sp);
+        JTextField tinhTrang = new JTextField(22), noiDung = new JTextField(22);
+        JDateChooser ngayNhan = new JDateChooser(), ngayHen = new JDateChooser();
+        ngayNhan.setDateFormatString("dd/MM/yyyy"); ngayHen.setDateFormatString("dd/MM/yyyy");
+        ngayNhan.setDate(new Date()); ngayHen.setDate(Date.from(LocalDateTime.now().plusDays(3).atZone(ZoneId.systemDefault()).toInstant()));
+        JComboBox<TrangThaiPhieuBaoHanh> trangThai = new JComboBox<>(TrangThaiPhieuBaoHanh.values());
 
-        List<KhachHang> listKH = khachHangDAO.getAll();
-        JComboBox<KhachHang> cboKH = new JComboBox<>(listKH.toArray(new KhachHang[0]));
-
-        List<SanPham> listSP = sanPhamDAO.getAll();
-        JComboBox<SanPham> cboSP = new JComboBox<>(listSP.toArray(new SanPham[0]));
-
-        JTextField txtTinhTrang = new JTextField(22);
-        JTextField txtNoiDung = new JTextField(22);
-
-        themDong(form, g, 0, "Mã phiếu BH", txtMa);
-        themDong(form, g, 1, "Khách hàng *", cboKH);
-        themDong(form, g, 2, "Sản phẩm lỗi *", cboSP);
-        themDong(form, g, 3, "Tình trạng sản phẩm *", txtTinhTrang);
-        themDong(form, g, 4, "Nội dung bảo hành *", txtNoiDung);
-
-        JButton btnLuu = taoNut("Lưu phiếu", new Color(14, 98, 195), Color.WHITE);
-        btnLuu.addActionListener(e -> {
-            KhachHang kh = (KhachHang) cboKH.getSelectedItem();
-            SanPham sp = (SanPham) cboSP.getSelectedItem();
-            String tinhTrang = txtTinhTrang.getText().trim();
-            String noiDung = txtNoiDung.getText().trim();
-
-            if (tinhTrang.isEmpty() || noiDung.isEmpty() || kh == null || sp == null) {
-                JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!");
-                return;
+        if (sua) {
+            kh.setSelectedItem(cu.getMaKhachHang());
+            ngayNhan.setDate(Date.from(cu.getNgayTiepNhan().atZone(ZoneId.systemDefault()).toInstant()));
+            ngayHen.setDate(Date.from(cu.getNgayHenTra().atZone(ZoneId.systemDefault()).toInstant()));
+            trangThai.setSelectedItem(cu.getTrangThai());
+            List<ChiTietPhieuBaoHanh> ds = dao.getChiTietByPhieu(cu);
+            if (!ds.isEmpty()) {
+                sp.setSelectedItem(ds.get(0).getMaSanPham());
+                tinhTrang.setText(ds.get(0).getTinhTrangSanPham());
+                noiDung.setText(ds.get(0).getNoiDungBaoHanh());
             }
+        }
 
-            // Tạo phiếu bảo hành mặc định trạng thái TIEP_NHAN
-            PhieuBaoHanh pbh = new PhieuBaoHanh(
-                    txtMa.getText().trim(),
-                    kh,
-                    null, // Lấy nhân viên đăng nhập hiện tại
-                    LocalDateTime.now(),
-                    LocalDateTime.now().plusDays(3), // Hẹn trả sau 3 ngày
-                    "",
-                    TrangThaiPhieuBaoHanh.TIEP_NHAN
-            );
+        dong(form,g,0,"Mã phiếu BH",ma);
+        dong(form,g,1,"Khách hàng *",kh);
+        dong(form,g,2,"Sản phẩm lỗi *",sp);
+        dong(form,g,3,"Tình trạng sản phẩm *",tinhTrang);
+        dong(form,g,4,"Nội dung bảo hành *",noiDung);
+        dong(form,g,5,"Ngày tiếp nhận *",ngayNhan);
+        dong(form,g,6,"Ngày hẹn trả *",ngayHen);
+        dong(form,g,7,"Trạng thái",trangThai);
 
-            List<ChiTietPhieuBaoHanh> chiTietList = new ArrayList<>();
-            chiTietList.add(new ChiTietPhieuBaoHanh(pbh, sp, tinhTrang, noiDung));
-
-            if (pbhDAO.insertWithDetails(pbh, chiTietList)) {
-                JOptionPane.showMessageDialog(dialog, "Lập phiếu bảo hành thành công!");
-                dialog.dispose();
-                taiDuLieu();
-            } else {
-                JOptionPane.showMessageDialog(dialog, "Lập phiếu thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        JButton save = nut(sua?"Lưu thay đổi":"Lưu phiếu");
+        save.addActionListener(e -> {
+            KhachHang k = (KhachHang)kh.getSelectedItem();
+            SanPham s = (SanPham)sp.getSelectedItem();
+            if (nhanVienDangNhap==null || k==null || s==null || tinhTrang.getText().trim().isEmpty()
+                    || noiDung.getText().trim().isEmpty() || ngayNhan.getDate()==null || ngayHen.getDate()==null) {
+                JOptionPane.showMessageDialog(d,"Vui lòng nhập đầy đủ thông tin."); return;
             }
+            LocalDateTime n1=ngayNhan.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay();
+            LocalDateTime n2=ngayHen.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay();
+            if(n2.isBefore(n1)){JOptionPane.showMessageDialog(d,"Ngày hẹn trả không được trước ngày tiếp nhận.");return;}
+            PhieuBaoHanh p = new PhieuBaoHanh(ma.getText(),k,nhanVienDangNhap,n1,n2,"",
+                    (TrangThaiPhieuBaoHanh)trangThai.getSelectedItem());
+            List<ChiTietPhieuBaoHanh> details=new ArrayList<>();
+            details.add(new ChiTietPhieuBaoHanh(p,s,tinhTrang.getText().trim(),noiDung.getText().trim()));
+            boolean ok = sua ? dao.updateWithDetails(p,details) : dao.insertWithDetails(p,details);
+            if(ok){JOptionPane.showMessageDialog(d,sua?"Cập nhật phiếu thành công!":"Lập phiếu bảo hành thành công!");d.dispose();taiDuLieu();}
+            else JOptionPane.showMessageDialog(d,"Không lưu được phiếu. "+dao.getLastError(),"Lỗi",JOptionPane.ERROR_MESSAGE);
         });
-
-        JPanel pnlBottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        pnlBottom.setBackground(Color.WHITE);
-        pnlBottom.add(btnLuu);
-        dialog.add(form, BorderLayout.CENTER);
-        dialog.add(pnlBottom, BorderLayout.SOUTH);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
+        JPanel bottom=new JPanel(new FlowLayout(FlowLayout.RIGHT)); bottom.setBackground(Color.WHITE); bottom.add(save);
+        d.add(form,BorderLayout.CENTER);d.add(bottom,BorderLayout.SOUTH);d.setSize(700,510);d.setResizable(false);d.setLocationRelativeTo(this);d.setVisible(true);
     }
 
-    private void themDong(JPanel p, GridBagConstraints g, int row, String label, JComponent c) {
-        g.gridy = row; g.gridx = 0; g.weightx = 0;
-        p.add(new JLabel(label), g);
-        g.gridx = 1; g.weightx = 1;
-        p.add(c, g);
+    private void xoaPhieu(){
+        PhieuBaoHanh p=getSelected(); if(p==null)return;
+        int c=JOptionPane.showConfirmDialog(this,"Bạn có chắc muốn xóa phiếu "+p.getMaPhieubaoHanh()+"?","Xác nhận",JOptionPane.YES_NO_OPTION);
+        if(c==JOptionPane.YES_OPTION){if(dao.delete(p)){JOptionPane.showMessageDialog(this,"Đã xóa phiếu.");taiDuLieu();}
+            else JOptionPane.showMessageDialog(this,"Xóa không thành công. Có thể phiếu đang được bảng khác tham chiếu.");}
     }
-
-    private JButton taoNut(String text, Color bg, Color fg) {
-        JButton b = new JButton(text);
-        b.setBackground(bg); b.setForeground(fg);
-        b.setFocusPainted(false);
-        return b;
-    }
+    private void hienThiKhachHang(JComboBox<KhachHang> c){c.setRenderer(new DefaultListCellRenderer(){public Component getListCellRendererComponent(JList<?> l,Object v,int i,boolean s,boolean f){super.getListCellRendererComponent(l,v,i,s,f);if(v instanceof KhachHang){KhachHang x=(KhachHang)v;setText(x.getMaKhachHang()+" - "+x.getHoTenKhachHang());}return this;}});}
+    private void hienThiSanPham(JComboBox<SanPham> c){c.setRenderer(new DefaultListCellRenderer(){public Component getListCellRendererComponent(JList<?> l,Object v,int i,boolean s,boolean f){super.getListCellRendererComponent(l,v,i,s,f);if(v instanceof SanPham){SanPham x=(SanPham)v;setText(x.getMaSanPham()+" - "+x.getTenSanPham());}return this;}});}
+    private void dong(JPanel p,GridBagConstraints g,int r,String label,JComponent c){g.gridy=r;g.gridx=0;g.weightx=0;p.add(new JLabel(label),g);g.gridx=1;g.weightx=1;c.setPreferredSize(new Dimension(440,28));p.add(c,g);}
+    private JButton nut(String t){JButton b=new JButton(t);b.setBackground(new Color(14,98,195));b.setForeground(Color.WHITE);b.setFocusPainted(false);return b;}
 }
