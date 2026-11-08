@@ -199,8 +199,11 @@ public class KhachHangGUI extends JPanel {
                 if (hoTen.isEmpty() || sdt.isEmpty()) {
                     throw new IllegalArgumentException("Vui lòng điền đầy đủ họ tên và số điện thoại.");
                 }
+                if (!hoTen.matches("[\\p{Lu}][\\p{L}]*([ \u0027-][\\p{Lu}][\\p{L}]*)*")) {
+                    throw new IllegalArgumentException("Họ tên chỉ được chứa chữ và phải viết hoa chữ cái đầu mỗi từ.");
+                }
                 if (!sdt.matches("0[0-9]{9}")) {
-                    throw new IllegalArgumentException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.");
+                    throw new IllegalArgumentException("Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.");
                 }
                 int diem = Integer.parseInt(txtDiem.getText().trim());
 
