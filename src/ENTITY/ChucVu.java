@@ -1,15 +1,19 @@
+
 package ENTITY;
 
 public class ChucVu {
+
     private String maChucVu;
     private String tenChucVu;
     private String viTriLamViec;
     private String moTaCongViec;
-    private boolean trangThai; // true: Đang hoạt động, false: Tạm ngưng
+    private boolean trangThai;
 
-    public ChucVu() {}
+    public ChucVu() {
+    }
 
-    public ChucVu(String maChucVu, String tenChucVu, String viTriLamViec, String moTaCongViec, boolean trangThai) {
+    public ChucVu(String maChucVu, String tenChucVu, String viTriLamViec,
+                  String moTaCongViec, boolean trangThai) {
         this.maChucVu = maChucVu;
         this.tenChucVu = tenChucVu;
         this.viTriLamViec = viTriLamViec;
@@ -57,11 +61,12 @@ public class ChucVu {
         this.trangThai = trangThai;
     }
 
-	@Override
-	public String toString() {
-		return "ChucVu [maChucVu=" + maChucVu + ", tenChucVu=" + tenChucVu + ", viTriLamViec=" + viTriLamViec
-				+ ", moTaCongViec=" + moTaCongViec + ", trangThai=" + trangThai + "]";
-	}
-
-    
+    @Override
+    public String toString() {
+        return "ChucVu [maChucVu=" + maChucVu
+                + ", tenChucVu=" + tenChucVu
+                + ", viTriLamViec=" + viTriLamViec
+                + ", moTaCongViec=" + moTaCongViec
+                + ", trangThai=" + trangThai + "]";
+    }
 }
