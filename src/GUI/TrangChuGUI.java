@@ -132,6 +132,9 @@ public class TrangChuGUI extends JFrame {
         taoItem(mnuTimKiem, "Tìm kiếm sản phẩm",
                 "TIM_KIEM_SAN_PHAM", "Tìm kiếm sản phẩm");
 
+        taoItem(mnuTimKiem, "Tra cứu hóa đơn",
+                "TIM_KIEM_HOA_DON", "Tra cứu hóa đơn");
+
         taoItem(mnuTimKiem, "Lịch sử mua hàng",
                 "LICH_SU_MUA_HANG", "Lịch sử mua hàng");
 
@@ -286,14 +289,19 @@ public class TrangChuGUI extends JFrame {
 
         panelNoiDung.add(new PhieuDatHangGUI(), "PHIEU_DAT_HANG");
         panelNoiDung.add(new HoaDonGUI(), "HOA_DON");
-        panelNoiDung.add(new BaoHanhGUI(), "BAO_HANH");
-        panelNoiDung.add(new NhapKhoGUI(), "NHAP_KHO");
+        panelNoiDung.add(new BaoHanhGUI(nhanVienDangNhap), "BAO_HANH");
+        panelNoiDung.add(new NhapKhoGUI(nhanVienDangNhap), "NHAP_KHO");
         panelNoiDung.add(new PhanCaGUI(), "PHAN_CA");
 
         // Tim kiem
         panelNoiDung.add(
                 new TimKiemSanPhamGUI(),
                 "TIM_KIEM_SAN_PHAM"
+        );
+
+        panelNoiDung.add(
+                new TimKiemHoaDonGUI(),
+                "TIM_KIEM_HOA_DON"
         );
 
         panelNoiDung.add(
