@@ -6,6 +6,7 @@ import BUS.BanHangBUS;
 import ENTITY.ChiTietHoaDon;
 import ENTITY.HoaDon;
 import ENTITY.KhachHang;
+import ENTITY.KhuyenMai;
 import ENTITY.NhaCungCap;
 import ENTITY.NhanVien;
 import ENTITY.SanPham;
@@ -42,6 +43,7 @@ public class BanHangGUI extends JPanel {
 
     private JComboBox<KhachHang> cboKhachHang;
     private JComboBox<PhuongThucThanhToan> cboThanhToan;
+    private JComboBox<KhuyenMai> cboKhuyenMai;
 
     // Danh sach san pham
     private List<SanPham> danhSachSanPham = new ArrayList<>();
@@ -192,7 +194,7 @@ public class BanHangGUI extends JPanel {
         // ==================== THONG TIN THANH TOAN ====================
 
         JPanel panelThanhToan = new JPanel(
-                new GridLayout(3, 2, 8, 8)
+                new GridLayout(4, 2, 8, 8)
         );
 
         panelThanhToan.setOpaque(false);
@@ -244,10 +246,28 @@ public class BanHangGUI extends JPanel {
             }
         });
 
+        // Khuyen mai con hieu luc
+        cboKhuyenMai = new JComboBox<>();
+        taiDanhSachKhuyenMai();
+        cboKhuyenMai.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof KhuyenMai) {
+                    KhuyenMai km = (KhuyenMai) value;
+                    setText(km.getMaKhuyenMai() + " - " + km.getTenKhuyenMai()
+                            + " - Giảm " + String.format("%.0f", km.getGiaTriGiam()) + "%");
+                } else {
+                    setText("Không áp dụng");
+                }
+                return this;
+            }
+        });
+        cboKhuyenMai.addActionListener(e -> capNhatTongTien());
+
         // Phuong thuc thanh toan
-        cboThanhToan = new JComboBox<>(
-                PhuongThucThanhToan.values()
-        );
+        cboThanhToan = new JComboBox<>(PhuongThucThanhToan.values());
 
         // Tong tien
         lblTongTien = new JLabel("0 VNĐ");
@@ -262,6 +282,9 @@ public class BanHangGUI extends JPanel {
                 new JLabel("Chọn khách hàng:")
         );
         panelThanhToan.add(cboKhachHang);
+
+        panelThanhToan.add(new JLabel("Khuyến mãi:"));
+        panelThanhToan.add(cboKhuyenMai);
 
         panelThanhToan.add(
                 new JLabel("Phương thức thanh toán:")
@@ -359,6 +382,46 @@ public class BanHangGUI extends JPanel {
                 cboKhachHang.addItem(kh);
             }
         }
+    }
+
+    private void taiDanhSachKhuyenMai() {
+        cboKhuyenMai.removeAllItems();
+        cboKhuyenMai.addItem(null);
+        LocalDateTime now = LocalDateTime.now();
+        List<KhuyenMai> danhSach = banHangBUS.getDanhSachKhuyenMai();
+        if (danhSach == null) return;
+
+        for (KhuyenMai km : danhSach) {
+            if (km == null || !km.isTrangThai()
+                    || km.getThoiGianBatDau() == null
+                    || km.getThoiGianKetThuc() == null) {
+                continue;
+            }
+
+            // Cho phep ap dung trong ca ngay bat dau va ngay ket thuc.
+            boolean dungThoiGian = !now.isBefore(km.getThoiGianBatDau())
+                    && !now.isAfter(km.getThoiGianKetThuc());
+            if (dungThoiGian && km.getGiaTriGiam() > 0
+                    && km.getGiaTriGiam() <= 100) {
+                cboKhuyenMai.addItem(km);
+            }
+        }
+    }
+
+    private double tinhTienGiam() {
+        KhuyenMai km = cboKhuyenMai == null
+                ? null : (KhuyenMai) cboKhuyenMai.getSelectedItem();
+        if (km == null) return 0;
+
+        // giaTriGiam trong bang KhuyenMai duoc luu theo phan tram.
+        double phanTram = Math.max(0, Math.min(100, km.getGiaTriGiam()));
+        return tinhTongTien() * phanTram / 100.0;
+    }
+
+    private void capNhatTongTien() {
+        if (lblTongTien == null) return;
+        lblTongTien.setText(String.format("%,.0f VNĐ",
+                Math.max(0, tinhTongTien() - tinhTienGiam())));
     }
 
     // ==================== TAI DANH SACH SAN PHAM ====================
@@ -591,9 +654,7 @@ public class BanHangGUI extends JPanel {
             });
         }
 
-        lblTongTien.setText(
-                String.format("%,.0f VNĐ", tongTien)
-        );
+        capNhatTongTien();
     }
 
     // ==================== TINH TONG TIEN ====================
@@ -740,8 +801,10 @@ public class BanHangGUI extends JPanel {
         // Hien thi xac nhan thanh toan
         int xacNhan = JOptionPane.showConfirmDialog(
                 this,
-                "Tổng tiền thanh toán: "
-                + String.format("%,.0f VNĐ", tinhTongTien())
+                "Tiền hàng: " + String.format("%,.0f VNĐ", tinhTongTien())
+                + "\nTiền giảm: " + String.format("%,.0f VNĐ", tinhTienGiam())
+                + "\nTổng thanh toán: "
+                + String.format("%,.0f VNĐ", Math.max(0, tinhTongTien() - tinhTienGiam()))
                 + "\nBạn có chắc chắn muốn thanh toán không?",
                 "Xác nhận thanh toán",
                 JOptionPane.YES_NO_OPTION
@@ -772,14 +835,14 @@ public class BanHangGUI extends JPanel {
                 .getMaNCC();
 
         // Ban hang truc tiep nen khong co phieu dat hang
-        // Chua ap dung chon khuyen mai nen maKhuyenMai de null
+        // Luu khuyen mai da chon vao hoa don de in va tra cuu sau nay.
         HoaDon hd = new HoaDon(
                 maHDMoi,
                 null,
                 kh,
                 nhanVienDangNhap,
                 nhaCungCap,
-                null,
+                (KhuyenMai) cboKhuyenMai.getSelectedItem(),
                 phuongThuc,
                 LocalDateTime.now(),
                 "Bán hàng trực tiếp tại quầy",
@@ -798,6 +861,20 @@ public class BanHangGUI extends JPanel {
                     "Thông báo",
                     JOptionPane.INFORMATION_MESSAGE
             );
+
+            // Hien thi hoa don va cho phep nguoi dung in ra giay.
+            List<ChiTietHoaDon> chiTietIn = new ArrayList<>(gioHang);
+            int chonIn = JOptionPane.showConfirmDialog(
+                    this,
+                    "Bạn có muốn xem và in hóa đơn không?",
+                    "In hóa đơn",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (chonIn == JOptionPane.YES_OPTION) {
+                HoaDonInGUI dialogIn = new HoaDonInGUI(
+                        SwingUtilities.getWindowAncestor(this), hd, chiTietIn);
+                dialogIn.setVisible(true);
+            }
 
             // Xoa gio hang sau khi thanh toan thanh cong
             gioHang.clear();
