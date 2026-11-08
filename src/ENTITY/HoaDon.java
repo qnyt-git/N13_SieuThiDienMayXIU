@@ -11,7 +11,6 @@ public class HoaDon {
     private PhieuDatHang maPhieuDatHang;				// liên kết phiếu đặt hàng
     private KhachHang maKhachHang;						// liên kết khách hàng
     private NhanVien maNhanVien;						// liên kết nhân viên
-    private NhaCungCap maNCC;							// liên kết nhà cung cấp
     private KhuyenMai maKhuyenMai;						// liên kết khuyến mãi	
     private PhuongThucThanhToan phuongThucThanhToan;	// chọn phương thức thanh toán
     private LocalDateTime ngayLap;						// ngày lập hóa đơn
@@ -22,14 +21,13 @@ public class HoaDon {
     public HoaDon() {}
     
 	public HoaDon(String maHoaDon, PhieuDatHang maPhieuDatHang, KhachHang maKhachHang, NhanVien maNhanVien,
-			NhaCungCap maNCC, KhuyenMai maKhuyenMai, PhuongThucThanhToan phuongThucThanhToan, LocalDateTime ngayLap,
+			KhuyenMai maKhuyenMai, PhuongThucThanhToan phuongThucThanhToan, LocalDateTime ngayLap,
 			String ghiChu, TrangThaiHoaDon trangThai) {
 		super();
 		this.maHoaDon = maHoaDon;
 		this.maPhieuDatHang = maPhieuDatHang;
 		this.maKhachHang = maKhachHang;
 		this.maNhanVien = maNhanVien;
-		this.maNCC = maNCC;
 		this.maKhuyenMai = maKhuyenMai;
 		this.phuongThucThanhToan = phuongThucThanhToan;
 		this.ngayLap = ngayLap;
@@ -59,12 +57,6 @@ public class HoaDon {
 	}
 	public void setMaNhanVien(NhanVien maNhanVien) {
 		this.maNhanVien = maNhanVien;
-	}
-	public NhaCungCap getMaNCC() {
-		return maNCC;
-	}
-	public void setMaNCC(NhaCungCap maNCC) {
-		this.maNCC = maNCC;
 	}
 	public KhuyenMai getMaKhuyenMai() {
 		return maKhuyenMai;
@@ -99,18 +91,8 @@ public class HoaDon {
 	@Override
 	public String toString() {
 		return "HoaDon [maHoaDon=" + maHoaDon + ", maPhieuDatHang=" + maPhieuDatHang + ", maKhachHang=" + maKhachHang
-				+ ", maNhanVien=" + maNhanVien + ", maNCC=" + maNCC + ", maKhuyenMai=" + maKhuyenMai
+				+ ", maNhanVien=" + maNhanVien + ", maKhuyenMai=" + maKhuyenMai
 				+ ", phuongThucThanhToan=" + phuongThucThanhToan + ", ngayLap=" + ngayLap + ", ghiChu=" + ghiChu
 				+ ", trangThai=" + trangThai + "]";
 	}
-
-
-
-
-
-
-
-
-
-
 }

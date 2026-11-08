@@ -36,4 +36,9 @@ public class HoaDonBUS {
 
     public String taoMaMoi() {
         return dao.taoMaMoi();
-    }}
+    }
+
+    public String getLastError() {
+        return dao.getLastError();
+    }
+}

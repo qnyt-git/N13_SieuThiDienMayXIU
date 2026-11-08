@@ -11,6 +11,7 @@ import ENUM.TrangThaiPhieuDatHang;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,195 +19,222 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * DAO của PhieuDatHang.
+ * Tuân thủ mô hình 3 lớp: Đưa toàn bộ thao tác CSDL và các phương thức xử lý từ Entity sang DAO.
+ */
 public class PhieuDatHangDAO implements IDAO<PhieuDatHang> {
 
-    private static TrangThaiPhieuDatHang docTrangThai(String s) {
-        String x = s == null ? "" : s.trim();
-        for (TrangThaiPhieuDatHang t : TrangThaiPhieuDatHang.values()) {
-            if (t.name().equalsIgnoreCase(x) || t.getMoTa().equalsIgnoreCase(x)) return t;
-        }
-        return TrangThaiPhieuDatHang.CHO_XU_LY; // Mặc định khi lập phiếu
+    private String lastError = "";
+
+    public String getLastError() {
+        return lastError;
     }
 
-    private static LocalDateTime toLdt(Timestamp t) {
+    private TrangThaiPhieuDatHang docTrangThai(String s) {
+        String x = s == null ? "" : s.trim();
+        for (TrangThaiPhieuDatHang t : TrangThaiPhieuDatHang.values()) {
+            if (t.name().equalsIgnoreCase(x) || t.getMoTa().equalsIgnoreCase(x)) {
+                return t;
+            }
+        }
+        String lower = x.toLowerCase();
+        if (lower.contains("hủy") || lower.contains("huy")) {
+            return TrangThaiPhieuDatHang.DA_HUY;
+        }
+        if ((lower.contains("thanh toán") || lower.contains("thanh toan"))
+                && !lower.contains("chờ") && !lower.contains("cho")) {
+            return TrangThaiPhieuDatHang.DA_THANH_TOAN;
+        }
+        return TrangThaiPhieuDatHang.CHO_XU_LY;
+    }
+
+    private LocalDateTime toLdt(Timestamp t) {
         return t == null ? null : t.toLocalDateTime();
     }
 
-    private static Timestamp toTs(LocalDateTime t) {
+    private Timestamp toTs(LocalDateTime t) {
         return t == null ? null : Timestamp.valueOf(t);
     }
 
     @Override
     public List<PhieuDatHang> getAll() {
         List<PhieuDatHang> list = new ArrayList<>();
-        Map<String, KhachHang> khMap = new HashMap<>();
-        for (KhachHang kh : new KhachHangDAO().getAll()) khMap.put(kh.getMaKhachHang(), kh);
-        
-        Map<String, NhanVien> nvMap = new HashMap<>();
-        for (NhanVien nv : new NhanVienDAO().getAll()) nvMap.put(nv.getMaNhanVien(), nv);
 
-        String sql = "SELECT * FROM PhieuDatHang";
+        Map<String, KhachHang> khMap = new HashMap<>();
+        for (KhachHang k : new KhachHangDAO().getAll()) {
+            khMap.put(k.getMaKhachHang(), k);
+        }
+
+        Map<String, NhanVien> nvMap = new HashMap<>();
+        for (NhanVien n : new NhanVienDAO().getAll()) {
+            nvMap.put(n.getMaNhanVien(), n);
+        }
+
+        String sql = "SELECT * FROM PhieuDatHang ORDER BY ngayDatHang DESC, maPhieuDatHang DESC";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
-                PhieuDatHang pdh = new PhieuDatHang(
-                    rs.getString("maPhieuDatHang"),
-                    khMap.get(rs.getString("maKhachHang")),
-                    nvMap.get(rs.getString("maNhanVien")),
-                    toLdt(rs.getTimestamp("ngayDatHang")),
-                    rs.getString("ghiChu"),
-                    docTrangThai(rs.getString("trangThai"))
+                PhieuDatHang p = new PhieuDatHang(
+                        rs.getString("maPhieuDatHang"),
+                        khMap.get(rs.getString("maKhachHang")),
+                        nvMap.get(rs.getString("maNhanVien")),
+                        toLdt(rs.getTimestamp("ngayDatHang")),
+                        rs.getString("ghiChu"),
+                        docTrangThai(rs.getString("trangThai"))
                 );
-                list.add(pdh);
+                list.add(p);
             }
         } catch (Exception e) {
+            lastError = e.getMessage();
             e.printStackTrace();
         }
         return list;
     }
 
-    /** Lấy danh sách chi tiết của một phiếu đặt hàng cụ thể */
+    /**
+     * Lấy danh sách chi tiết sản phẩm của một phiếu đặt hàng.
+     */
     public List<ChiTietPhieuDatHang> getChiTietByPhieu(PhieuDatHang pdh) {
         List<ChiTietPhieuDatHang> list = new ArrayList<>();
         if (pdh == null) return list;
 
         Map<String, SanPham> spMap = new HashMap<>();
-        for (SanPham sp : new SanPhamDAO().getAll()) spMap.put(sp.getMaSanPham(), sp);
+        for (SanPham s : new SanPhamDAO().getAll()) {
+            spMap.put(s.getMaSanPham(), s);
+        }
 
-        String sql = "SELECT maPhieuDatHang, maSanPham, soLuong, donGia FROM ChiTietPhieuDatHang WHERE maPhieuDatHang = ?";
+        String sql = "SELECT maPhieuDatHang, maSanPham, soLuong, donGia "
+                + "FROM ChiTietPhieuDatHang WHERE maPhieuDatHang = ?";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, pdh.getMaPhieuDatHang());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    SanPham sp = spMap.get(rs.getString("maSanPham"));
-                    if (sp != null) {
-                        ChiTietPhieuDatHang ct = new ChiTietPhieuDatHang(
-                            pdh,
-                            sp,
-                            rs.getInt("soLuong"),
-                            rs.getDouble("donGia")
-                        );
-                        list.add(ct);
+                    SanPham s = spMap.get(rs.getString("maSanPham"));
+                    if (s != null) {
+                        list.add(new ChiTietPhieuDatHang(
+                                pdh,
+                                s,
+                                rs.getInt("soLuong"),
+                                rs.getDouble("donGia")
+                        ));
                     }
                 }
             }
         } catch (Exception e) {
+            lastError = e.getMessage();
             e.printStackTrace();
         }
         return list;
     }
 
-    private boolean themChiTietDB(Connection con, PhieuDatHang pdh, List<ChiTietPhieuDatHang> chiTietList) {
-        String sql = "INSERT INTO ChiTietPhieuDatHang(maPhieuDatHang, maSanPham, soLuong, donGia) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            for (ChiTietPhieuDatHang ct : chiTietList) {
-                ps.setString(1, pdh.getMaPhieuDatHang());
-                ps.setString(2, ct.getMaSanPham() != null ? ct.getMaSanPham().getMaSanPham() : null);
-                ps.setInt(3, ct.getSoLuong());
-                ps.setDouble(4, ct.getDonGia());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
+    /**
+     * Thêm phiếu đặt hàng kèm danh sách chi tiết trong cùng một Transaction.
+     */
+    public boolean insertWithDetails(PhieuDatHang pdh, List<ChiTietPhieuDatHang> chiTietList) {
+        lastError = "";
+        if (pdh == null) {
+            lastError = "Thông tin phiếu đặt hàng không tồn tại!";
             return false;
         }
-    }
 
-    /** Thêm phiếu đặt hàng kèm danh sách chi tiết trong Transaction */
-    public boolean insertWithDetails(PhieuDatHang pdh, List<ChiTietPhieuDatHang> chiTietList) {
+        String sqlPdh = "INSERT INTO PhieuDatHang "
+                + "(maPhieuDatHang, maKhachHang, maNhanVien, ngayDatHang, ghiChu, trangThai) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String sqlCt = "INSERT INTO ChiTietPhieuDatHang "
+                + "(maPhieuDatHang, maSanPham, soLuong, donGia) VALUES (?, ?, ?, ?)";
+
         Connection con = null;
-        String sql = "INSERT INTO PhieuDatHang(maPhieuDatHang, maKhachHang, maNhanVien, ngayDatHang, ghiChu, trangThai) VALUES (?, ?, ?, ?, ?, ?)";
+        boolean autoCommitCu = true;
         try {
             con = ConnectDB.getConnection();
+            if (con == null) {
+                throw new SQLException("Không kết nối được SQL Server!");
+            }
+            autoCommitCu = con.getAutoCommit();
             con.setAutoCommit(false);
 
-            try (PreparedStatement ps = con.prepareStatement(sql)) {
+            try (PreparedStatement ps = con.prepareStatement(sqlPdh)) {
                 ps.setString(1, pdh.getMaPhieuDatHang());
                 ps.setString(2, pdh.getMaKhachHang() != null ? pdh.getMaKhachHang().getMaKhachHang() : null);
                 ps.setString(3, pdh.getMaNhanVien() != null ? pdh.getMaNhanVien().getMaNhanVien() : null);
                 ps.setTimestamp(4, toTs(pdh.getNgayDatHang()));
                 ps.setString(5, pdh.getGhiChu());
-                ps.setString(6, pdh.getTrangThai() != null ? pdh.getTrangThai().getMoTa() : TrangThaiPhieuDatHang.CHO_XU_LY.getMoTa());
+                ps.setString(6, pdh.getTrangThai() != null ? pdh.getTrangThai().name() : TrangThaiPhieuDatHang.CHO_XU_LY.name());
                 if (ps.executeUpdate() <= 0) {
-                    con.rollback();
-                    return false;
+                    throw new SQLException("Không thêm được phiếu đặt hàng!");
                 }
             }
 
             if (chiTietList != null && !chiTietList.isEmpty()) {
-                if (!themChiTietDB(con, pdh, chiTietList)) {
-                    con.rollback();
-                    return false;
+                try (PreparedStatement psCt = con.prepareStatement(sqlCt)) {
+                    for (ChiTietPhieuDatHang ct : chiTietList) {
+                        if (ct == null || ct.getMaSanPham() == null || ct.getSoLuong() <= 0) {
+                            throw new SQLException("Chi tiết phiếu đặt hàng không hợp lệ!");
+                        }
+                        psCt.setString(1, pdh.getMaPhieuDatHang());
+                        psCt.setString(2, ct.getMaSanPham().getMaSanPham());
+                        psCt.setInt(3, ct.getSoLuong());
+                        psCt.setDouble(4, ct.getDonGia());
+                        psCt.addBatch();
+                    }
+                    psCt.executeBatch();
                 }
             }
 
             con.commit();
             return true;
         } catch (Exception e) {
+            lastError = e.getMessage();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ignored) {}
+            }
             e.printStackTrace();
-            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             return false;
         } finally {
-            try { if (con != null) con.setAutoCommit(true); } catch (Exception e) { e.printStackTrace(); }
+            if (con != null) {
+                try { con.setAutoCommit(autoCommitCu); } catch (SQLException ignored) {}
+                try { con.close(); } catch (SQLException ignored) {}
+            }
         }
     }
 
     @Override
-    public boolean insert(PhieuDatHang pdh) {
-        return insertWithDetails(pdh, new ArrayList<>());
+    public boolean insert(PhieuDatHang p) {
+        return insertWithDetails(p, new ArrayList<>());
     }
 
     @Override
-    public boolean update(PhieuDatHang pdh) {
-        String sql = "UPDATE PhieuDatHang SET maKhachHang = ?, maNhanVien = ?, ngayDatHang = ?, ghiChu = ?, trangThai = ? WHERE maPhieuDatHang = ?";
+    public boolean update(PhieuDatHang p) {
+        lastError = "";
+        String sql = "UPDATE PhieuDatHang SET maKhachHang = ?, maNhanVien = ?, "
+                + "ngayDatHang = ?, ghiChu = ?, trangThai = ? WHERE maPhieuDatHang = ?";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, pdh.getMaKhachHang() != null ? pdh.getMaKhachHang().getMaKhachHang() : null);
-            ps.setString(2, pdh.getMaNhanVien() != null ? pdh.getMaNhanVien().getMaNhanVien() : null);
-            ps.setTimestamp(3, toTs(pdh.getNgayDatHang()));
-            ps.setString(4, pdh.getGhiChu());
-            ps.setString(5, pdh.getTrangThai() != null ? pdh.getTrangThai().getMoTa() : null);
-            ps.setString(6, pdh.getMaPhieuDatHang());
+
+            ps.setString(1, p.getMaKhachHang() != null ? p.getMaKhachHang().getMaKhachHang() : null);
+            ps.setString(2, p.getMaNhanVien() != null ? p.getMaNhanVien().getMaNhanVien() : null);
+            ps.setTimestamp(3, toTs(p.getNgayDatHang()));
+            ps.setString(4, p.getGhiChu());
+            ps.setString(5, p.getTrangThai() != null ? p.getTrangThai().name() : null);
+            ps.setString(6, p.getMaPhieuDatHang());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            lastError = e.getMessage();
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     @Override
-    public boolean delete(PhieuDatHang pdh) {
-        Connection con = null;
-        try {
-            con = ConnectDB.getConnection();
-            con.setAutoCommit(false);
-
-            try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuDatHang WHERE maPhieuDatHang = ?")) {
-                ps.setString(1, pdh.getMaPhieuDatHang());
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = con.prepareStatement("DELETE FROM PhieuDatHang WHERE maPhieuDatHang = ?")) {
-                ps.setString(1, pdh.getMaPhieuDatHang());
-                if (ps.executeUpdate() <= 0) {
-                    con.rollback();
-                    return false;
-                }
-            }
-
-            con.commit();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
-            return false;
-        } finally {
-            try { if (con != null) con.setAutoCommit(true); } catch (Exception e) { e.printStackTrace(); }
-        }
+    public boolean delete(PhieuDatHang p) {
+        if (p == null) return false;
+        p.setTrangThai(TrangThaiPhieuDatHang.DA_HUY);
+        return update(p);
     }
 
     @Override
@@ -216,8 +244,11 @@ public class PhieuDatHangDAO implements IDAO<PhieuDatHang> {
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) max = rs.getInt(1);
+            if (rs.next()) {
+                max = rs.getInt(1);
+            }
         } catch (Exception e) {
+            lastError = e.getMessage();
             e.printStackTrace();
         }
         return String.format("PDH%02d", max + 1);
@@ -228,8 +259,10 @@ public class PhieuDatHangDAO implements IDAO<PhieuDatHang> {
     public double tinhTongTien(List<ChiTietPhieuDatHang> chiTietList) {
         if (chiTietList == null) return 0;
         double tong = 0;
-        for (ChiTietPhieuDatHang ct : chiTietList) {
-            tong += ct.getSoLuong() * ct.getDonGia();
+        for (ChiTietPhieuDatHang c : chiTietList) {
+            if (c != null) {
+                tong += Math.round(c.getSoLuong() * c.getDonGia());
+            }
         }
         return tong;
     }
@@ -249,16 +282,15 @@ public class PhieuDatHangDAO implements IDAO<PhieuDatHang> {
     }
 
     public boolean daThanhToan(PhieuDatHang pdh) {
-        if (pdh == null || pdh.getTrangThai() == null) return false;
-        return pdh.getTrangThai() == TrangThaiPhieuDatHang.DA_THANH_TOAN;
+        return pdh != null && pdh.getTrangThai() == TrangThaiPhieuDatHang.DA_THANH_TOAN;
     }
 
     public ChiTietPhieuDatHang taoChiTiet(PhieuDatHang pdh, SanPham sp, int soLuong, double donGia) {
-        if (pdh == null) return null;
         return new ChiTietPhieuDatHang(pdh, sp, soLuong, donGia);
     }
 
     public String trangThaiText(PhieuDatHang pdh) {
-        return (pdh == null || pdh.getTrangThai() == null) ? "" : pdh.getTrangThai().getMoTa();
+        if (pdh == null || pdh.getTrangThai() == null) return "";
+        return pdh.getTrangThai().getMoTa();
     }
 }

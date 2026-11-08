@@ -174,12 +174,12 @@ CREATE TABLE ChiTietPhieuDatHang (
 );
 GO
 
+-- Đã bỏ cột maNCC và khóa ngoại FK_HD_NCC khỏi HoaDon
 CREATE TABLE HoaDon (
     maHoaDon VARCHAR(20) PRIMARY KEY,
     maPhieuDatHang VARCHAR(20) NULL,
     maKhachHang VARCHAR(20) NOT NULL,
     maNhanVien VARCHAR(20) NOT NULL,
-    maNCC VARCHAR(20) NOT NULL,
     maKhuyenMai VARCHAR(20) NULL,
     phuongThucThanhToan VARCHAR(50) NOT NULL,
     ngayLap DATETIME2 NOT NULL,
@@ -188,7 +188,6 @@ CREATE TABLE HoaDon (
     CONSTRAINT FK_HD_PhieuDat FOREIGN KEY (maPhieuDatHang) REFERENCES PhieuDatHang(maPhieuDatHang),
     CONSTRAINT FK_HD_KhachHang FOREIGN KEY (maKhachHang) REFERENCES KhachHang(maKhachHang),
     CONSTRAINT FK_HD_NhanVien FOREIGN KEY (maNhanVien) REFERENCES NhanVien(maNhanVien),
-    CONSTRAINT FK_HD_NCC FOREIGN KEY (maNCC) REFERENCES NhaCungCap(maNCC),
     CONSTRAINT FK_HD_KhuyenMai FOREIGN KEY (maKhuyenMai) REFERENCES KhuyenMai(maKhuyenMai)
 );
 GO
@@ -332,12 +331,13 @@ INSERT INTO ChiTietPhieuDatHang VALUES
 ('PDH05', 'SP05', 3, 2500000);
 GO
 
+-- Đã bỏ giá trị maNCC khỏi câu lệnh INSERT INTO HoaDon
 INSERT INTO HoaDon VALUES 
-('HD01', 'PDH02', 'KH02', 'NV02', 'NCC01', 'KM01', 'Tiền mặt', '2026-06-06 11:30:00', N'Đã thanh toán đủ', 'Đã thanh toán'),
-('HD02', 'PDH05', 'KH05', 'NV02', 'NCC02', 'KM02', 'Chuyển khoản ngân hàng', '2026-06-06 14:30:00', N'Thanh toán qua Momo', 'Đã thanh toán'),
-('HD03', NULL, 'KH01', 'NV02', 'NCC03', NULL, 'Tiền mặt', '2026-06-06 15:00:00', N'Mua trực tiếp tại quầy', 'Đã thanh toán'),
-('HD04', NULL, 'KH03', 'NV02', 'NCC04', 'KM04', 'Thẻ ngân hàng (ATM/Visa/Master)', '2026-06-06 15:30:00', N'Quẹt thẻ POS', 'Chờ xử lý (chờ thanh toán)'),
-('HD05', NULL, 'KH04', 'NV02', 'NCC05', NULL, 'Ví điện tử (MoMo/ShopeePay)', '2026-06-06 16:00:00', N'Thanh toán chuyển khoản', 'Đã thanh toán');
+('HD01', 'PDH02', 'KH02', 'NV02', 'KM01', 'Tiền mặt', '2026-06-06 11:30:00', N'Đã thanh toán đủ', 'Đã thanh toán'),
+('HD02', 'PDH05', 'KH05', 'NV02', 'KM02', 'Chuyển khoản ngân hàng', '2026-06-06 14:30:00', N'Thanh toán qua Momo', 'Đã thanh toán'),
+('HD03', NULL, 'KH01', 'NV02', NULL, 'Tiền mặt', '2026-06-06 15:00:00', N'Mua trực tiếp tại quầy', 'Đã thanh toán'),
+('HD04', NULL, 'KH03', 'NV02', 'KM04', 'Thẻ ngân hàng (ATM/Visa/Master)', '2026-06-06 15:30:00', N'Quẹt thẻ POS', 'Chờ xử lý (chờ thanh toán)'),
+('HD05', NULL, 'KH04', 'NV02', NULL, 'Ví điện tử (MoMo/ShopeePay)', '2026-06-06 16:00:00', N'Thanh toán chuyển khoản', 'Đã thanh toán');
 GO
 
 INSERT INTO ChiTietHoaDon VALUES 

@@ -1,4 +1,3 @@
-
 package DAO;
 
 import CONNECTDB.ConnectDB;
@@ -12,6 +11,7 @@ import ENTITY.PhieuDatHang;
 import ENTITY.SanPham;
 import ENUM.PhuongThucThanhToan;
 import ENUM.TrangThaiHoaDon;
+import ENUM.TrangThaiSanPham;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,9 +21,9 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 
 public class HoaDonDAO implements IDAO<HoaDon> {
 
@@ -46,6 +46,18 @@ public class HoaDonDAO implements IDAO<HoaDon> {
             }
         }
 
+        // Xu ly truong hop cot VARCHAR(50) trong SQL lam loi dau tieng Viet cua du lieu mau
+        String lower = x.toLowerCase();
+        if (lower.contains("khoản") || lower.contains("khoan") || lower.contains("chuyển") || lower.contains("chuyen")) {
+            return PhuongThucThanhToan.CHUYEN_KHOAN;
+        }
+        if (lower.contains("atm") || lower.contains("visa") || lower.contains("master") || lower.contains("thẻ") || lower.contains("the")) {
+            return PhuongThucThanhToan.THE_NGAN_HANG;
+        }
+        if (lower.contains("momo") || lower.contains("shopee") || lower.contains("ví") || lower.contains("vi ")) {
+            return PhuongThucThanhToan.VI_DIEN_TU;
+        }
+
         return PhuongThucThanhToan.TIEN_MAT;
     }
 
@@ -57,6 +69,15 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                     || t.getMoTa().equalsIgnoreCase(x)) {
                 return t;
             }
+        }
+
+        // Xu ly truong hop cot VARCHAR(50) trong SQL bien chu "Đã thanh toán" thanh "?a thanh toan" hoac "Ða thanh toan"
+        String lower = x.toLowerCase();
+        if (lower.contains("chờ") || lower.contains("cho ") || lower.contains("xử lý") || lower.contains("xu ly")) {
+            return TrangThaiHoaDon.CHO_THANH_TOAN;
+        }
+        if (lower.contains("thanh toán") || lower.contains("thanh toan") || lower.contains("da_thanh_toan")) {
+            return TrangThaiHoaDon.DA_THANH_TOAN;
         }
 
         return TrangThaiHoaDon.CHO_THANH_TOAN;
@@ -87,11 +108,6 @@ public class HoaDonDAO implements IDAO<HoaDon> {
             nvMap.put(n.getMaNhanVien(), n);
         }
 
-        Map<String, NhaCungCap> nccMap = new HashMap<>();
-        for (NhaCungCap n : new NhaCungCapDAO().getAll()) {
-            nccMap.put(n.getMaNCC(), n);
-        }
-
         Map<String, KhuyenMai> kmMap = new HashMap<>();
         for (KhuyenMai k : new KhuyenMaiDAO().getAll()) {
             kmMap.put(k.getMaKhuyenMai(), k);
@@ -102,7 +118,7 @@ public class HoaDonDAO implements IDAO<HoaDon> {
             pdhMap.put(p.getMaPhieuDatHang(), p);
         }
 
-        String sql = "SELECT * FROM HoaDon ORDER BY ngayLap, maHoaDon";
+        String sql = "SELECT * FROM HoaDon ORDER BY ngayLap DESC, maHoaDon DESC";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -115,7 +131,6 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                         pdhMap.get(rs.getString("maPhieuDatHang")),
                         khMap.get(rs.getString("maKhachHang")),
                         nvMap.get(rs.getString("maNhanVien")),
-                        nccMap.get(rs.getString("maNCC")),
                         kmMap.get(rs.getString("maKhuyenMai")),
                         docPhuongThuc(
                                 rs.getString("phuongThucThanhToan")),
@@ -192,20 +207,31 @@ public class HoaDonDAO implements IDAO<HoaDon> {
         return list;
     }
 
+    public List<NhaCungCap> getDanhSachNhaCungCapByHoaDon(HoaDon hd) {
+        Map<String, NhaCungCap> mapNcc = new LinkedHashMap<>();
+        for (ChiTietHoaDon ct : getChiTietByHoaDon(hd)) {
+            if (ct.getMaSanPham() != null && ct.getMaSanPham().getMaNCC() != null) {
+                NhaCungCap ncc = ct.getMaSanPham().getMaNCC();
+                mapNcc.put(ncc.getMaNCC(), ncc);
+            }
+        }
+        return new ArrayList<>(mapNcc.values());
+    }
+
     // ===================== THEM HOA DON =====================
 
     /**
      * Them thong tin hoa don vao database.
-     * Khong tu dong bat loi de transaction co the rollback.
+     * Luu phuongThucThanhToan.name() va trangThai.name() de khong bi loi font tren cot VARCHAR(50).
      */
     private boolean themHoaDonDB(Connection con, HoaDon h)
             throws SQLException {
 
         String sql = "INSERT INTO HoaDon "
                 + "(maHoaDon, maPhieuDatHang, maKhachHang, "
-                + "maNhanVien, maNCC, maKhuyenMai, "
+                + "maNhanVien, maKhuyenMai, "
                 + "phuongThucThanhToan, ngayLap, ghiChu, trangThai) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -227,24 +253,19 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                     : null);
 
             ps.setString(5,
-                    h.getMaNCC() != null
-                    ? h.getMaNCC().getMaNCC()
-                    : null);
-
-            ps.setString(6,
                     h.getMaKhuyenMai() != null
                     ? h.getMaKhuyenMai().getMaKhuyenMai()
                     : null);
 
-            ps.setString(7,
+            ps.setString(6,
                     h.getPhuongThucThanhToan() != null
                     ? h.getPhuongThucThanhToan().name()
                     : null);
 
-            ps.setTimestamp(8, toTs(h.getNgayLap()));
-            ps.setString(9, h.getGhiChu());
+            ps.setTimestamp(7, toTs(h.getNgayLap()));
+            ps.setString(8, h.getGhiChu());
 
-            ps.setString(10,
+            ps.setString(9,
                     h.getTrangThai() != null
                     ? h.getTrangThai().name()
                     : null);
@@ -256,7 +277,7 @@ public class HoaDonDAO implements IDAO<HoaDon> {
     // ===================== THEM CHI TIET HOA DON =====================
 
     /**
-     * Them danh sach chi tiet hoa don.
+     * Them danh sach chi tiet hoa don va cap nhat tru ton kho san pham.
      */
     private boolean themChiTietDB(
             Connection con,
@@ -267,11 +288,17 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                 + "(maHoaDon, maSanPham, soLuong, donGia, thueVAT) "
                 + "VALUES (?, ?, ?, ?, ?)";
 
+        String sqlTruKho = "UPDATE SanPham "
+                + "SET soLuongTon = soLuongTon - ?, "
+                + "    trangThai = CASE WHEN soLuongTon - ? <= 0 THEN ? ELSE trangThai END "
+                + "WHERE maSanPham = ? AND soLuongTon >= ?";
+
         if (chiTietList == null || chiTietList.isEmpty()) {
             return true;
         }
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement psKho = con.prepareStatement(sqlTruKho)) {
 
             for (ChiTietHoaDon ct : chiTietList) {
 
@@ -290,16 +317,28 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                             "So luong san pham phai lon hon 0!");
                 }
 
+                String maSP = ct.getMaSanPham().getMaSanPham();
+                int soLuongMua = ct.getSoLuong();
+
                 ps.setString(1, h.getMaHoaDon());
-
-                ps.setString(2,
-                        ct.getMaSanPham().getMaSanPham());
-
-                ps.setInt(3, ct.getSoLuong());
+                ps.setString(2, maSP);
+                ps.setInt(3, soLuongMua);
                 ps.setDouble(4, ct.getDonGia());
                 ps.setFloat(5, ct.getThueVAT());
 
                 ps.addBatch();
+
+                // Cap nhat tru so luong ton kho cua san pham trong CSDL
+                psKho.setInt(1, soLuongMua);
+                psKho.setInt(2, soLuongMua);
+                psKho.setString(3, TrangThaiSanPham.HET_HANG.name());
+                psKho.setString(4, maSP);
+                psKho.setInt(5, soLuongMua);
+
+                if (psKho.executeUpdate() <= 0) {
+                    throw new SQLException(
+                            "San pham " + maSP + " khong du so luong ton kho!");
+                }
             }
 
             ps.executeBatch();
@@ -423,7 +462,6 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                 + "maPhieuDatHang = ?, "
                 + "maKhachHang = ?, "
                 + "maNhanVien = ?, "
-                + "maNCC = ?, "
                 + "maKhuyenMai = ?, "
                 + "phuongThucThanhToan = ?, "
                 + "ngayLap = ?, "
@@ -450,29 +488,24 @@ public class HoaDonDAO implements IDAO<HoaDon> {
                     : null);
 
             ps.setString(4,
-                    h.getMaNCC() != null
-                    ? h.getMaNCC().getMaNCC()
-                    : null);
-
-            ps.setString(5,
                     h.getMaKhuyenMai() != null
                     ? h.getMaKhuyenMai().getMaKhuyenMai()
                     : null);
 
-            ps.setString(6,
+            ps.setString(5,
                     h.getPhuongThucThanhToan() != null
                     ? h.getPhuongThucThanhToan().name()
                     : null);
 
-            ps.setTimestamp(7, toTs(h.getNgayLap()));
-            ps.setString(8, h.getGhiChu());
+            ps.setTimestamp(6, toTs(h.getNgayLap()));
+            ps.setString(7, h.getGhiChu());
 
-            ps.setString(9,
+            ps.setString(8,
                     h.getTrangThai() != null
                     ? h.getTrangThai().name()
                     : null);
 
-            ps.setString(10, h.getMaHoaDon());
+            ps.setString(9, h.getMaHoaDon());
 
             return ps.executeUpdate() > 0;
 

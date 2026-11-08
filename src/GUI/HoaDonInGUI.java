@@ -5,6 +5,9 @@ import ENTITY.HoaDon;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import BUS.BanHangBUS;
+
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
@@ -94,12 +97,12 @@ public class HoaDonInGUI extends JDialog {
                         .append(catDong(tenSP, DO_RONG - 5).replace("\n", "\n     "))
                         .append("\n");
 
-                double tienHang = ct.getSoLuong() * ct.getDonGia();
-                double tienThue = tienHang * ct.getThueVAT();
-                double thanhTien = tienHang + tienThue;
+                double tienHang = BanHangBUS.tinhTienHang(ct);
+                double tienThue = BanHangBUS.tinhTienVAT(ct);
+                double thanhTien = BanHangBUS.tinhThanhTien(ct);
                 tongTienHang += tienHang;
                 tongVAT += tienThue;
-
+                
                 String dong = ct.getSoLuong() + " x " + DINH_DANG_TIEN.format(ct.getDonGia());
                 sb.append(canTraiPhai(dong, DINH_DANG_TIEN.format(thanhTien))).append("\n");
                 sb.append("VAT ").append(Math.round(ct.getThueVAT() * 100)).append("%: ")

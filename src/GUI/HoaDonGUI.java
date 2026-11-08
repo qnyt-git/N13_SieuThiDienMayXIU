@@ -48,9 +48,7 @@ public class HoaDonGUI extends JPanel {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.setOpaque(false);
         JButton btnChiTiet = taoNut("Xem chi tiết hóa đơn", new Color(14, 98, 195), Color.WHITE);
-        JButton btnHuyHD = taoNut("Hủy hóa đơn", new Color(220, 38, 38), Color.WHITE);
         buttons.add(btnChiTiet);
-        buttons.add(btnHuyHD);
 
         bar.add(left, BorderLayout.WEST);
         bar.add(buttons, BorderLayout.EAST);
@@ -87,7 +85,7 @@ public class HoaDonGUI extends JPanel {
         taiDuLieu();
     }
 
-    private void taiDuLieu() {
+    public void taiDuLieu() {
         try {
             danhSachHoaDon = hoaDonDAO.getAll();
             hienThiDanhSach(danhSachHoaDon);
@@ -109,7 +107,7 @@ public class HoaDonGUI extends JPanel {
                     tenKH,
                     tenNV,
                     hd.getNgayLap() != null ? hd.getNgayLap().format(FORMATTER) : "",
-                    hd.getPhuongThucThanhToan(),
+                    hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan().getMoTa() : "",
                     hd.getTrangThai() != null ? hd.getTrangThai().getMoTa() : ""
             });
         }
@@ -152,7 +150,7 @@ public class HoaDonGUI extends JPanel {
         List<ChiTietHoaDon> chiTiets = hoaDonDAO.getChiTietByHoaDon(hd);
         
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Chi tiết hóa đơn: " + hd.getMaHoaDon(), Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(650, 400);
+        dialog.setSize(680, 420);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
@@ -162,17 +160,25 @@ public class HoaDonGUI extends JPanel {
         pnlInfo.add(new JLabel("Ngày lập: " + (hd.getNgayLap() != null ? hd.getNgayLap().format(FORMATTER) : "")));
         pnlInfo.add(new JLabel("Khách hàng: " + (hd.getMaKhachHang() != null ? hd.getMaKhachHang().getHoTenKhachHang() : "")));
         pnlInfo.add(new JLabel("Nhân viên lập: " + (hd.getMaNhanVien() != null ? hd.getMaNhanVien().getHoTenNhanVien() : "")));
-        pnlInfo.add(new JLabel("Phương thức TT: " + hd.getPhuongThucThanhToan()));
+        pnlInfo.add(new JLabel("Phương thức TT: " + (hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan().getMoTa() : "")));
         pnlInfo.add(new JLabel("Trạng thái: " + (hd.getTrangThai() != null ? hd.getTrangThai().getMoTa() : "")));
 
-        DefaultTableModel modelCT = new DefaultTableModel(new Object[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "VAT", "Thành tiền"}, 0);
+        DefaultTableModel modelCT = new DefaultTableModel(
+                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Số lượng", "Đơn giá", "VAT", "Thành tiền"}, 0
+        ) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
         double tongTien = 0;
         for (ChiTietHoaDon ct : chiTiets) {
             double thanhTien = ct.getSoLuong() * ct.getDonGia() * (1 + ct.getThueVAT());
             tongTien += thanhTien;
+            String tenNCC = (ct.getMaSanPham() != null && ct.getMaSanPham().getMaNCC() != null)
+                    ? ct.getMaSanPham().getMaNCC().getTenThuongHieu()
+                    : "";
             modelCT.addRow(new Object[]{
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getMaSanPham() : "",
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getTenSanPham() : "",
+                    tenNCC,
                     ct.getSoLuong(),
                     String.format("%,.0f", ct.getDonGia()),
                     (int)(ct.getThueVAT() * 100) + "%",
@@ -192,9 +198,6 @@ public class HoaDonGUI extends JPanel {
         dialog.add(lblTong, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-
-    
-    
 
     private JButton taoNut(String text, Color bg, Color fg) {
         JButton b = new JButton(text);

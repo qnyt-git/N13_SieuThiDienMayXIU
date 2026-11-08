@@ -14,6 +14,18 @@ public class PhieuDatHangBUS {
         return dao.getAll();
     }
 
+    public List<PhieuDatHang> getDanhSachChoXuLy() {
+        List<PhieuDatHang> ds = new ArrayList<>();
+        List<PhieuDatHang> all = dao.getAll();
+        if (all == null) return ds;
+        for (PhieuDatHang p : all) {
+            if (p != null && p.getTrangThai() == TrangThaiPhieuDatHang.CHO_XU_LY) {
+                ds.add(p);
+            }
+        }
+        return ds;
+    }
+
     public List<ChiTietPhieuDatHang> getChiTietByPhieu(PhieuDatHang pdh) {
         return dao.getChiTietByPhieu(pdh);
     }
@@ -60,4 +72,9 @@ public class PhieuDatHangBUS {
 
     public String trangThaiText(PhieuDatHang pdh) {
         return dao.trangThaiText(pdh);
-    }}
+    }
+
+    public String getLastError() {
+        return dao.getLastError();
+    }
+}
