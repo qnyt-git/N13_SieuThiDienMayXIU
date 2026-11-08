@@ -60,7 +60,7 @@ public class SanPhamGUI extends JPanel {
         add(top, BorderLayout.NORTH);
 
         modelSanPham = new DefaultTableModel(new Object[]{
-                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Giá bán (VNĐ)", "Tồn kho", "Bảo hành", "Trạng thái"
+                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Nơi sản xuất", "Giá bán (VNĐ)", "Tồn kho", "Bảo hành", "Trạng thái"
         }, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -107,6 +107,7 @@ public class SanPhamGUI extends JPanel {
                     sp.getMaSanPham(),
                     sp.getTenSanPham(),
                     tenNCC,
+                    sp.getNoiSanXuat(),
                     String.format("%,.0f", sp.getGiaBan()),
                     sp.getSoLuongTon(),
                     sp.getThoiHanBaoHanh(),
@@ -121,7 +122,8 @@ public class SanPhamGUI extends JPanel {
         List<SanPham> ketQua = new ArrayList<>();
         for (SanPham sp : danhSachSanPham) {
             String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
-            String thongTin = (sp.getMaSanPham() + " " + sp.getTenSanPham() + " " + tenNCC).toLowerCase();
+            String noiSX = sp.getNoiSanXuat() != null ? sp.getNoiSanXuat() : "";
+            String thongTin = (sp.getMaSanPham() + " " + sp.getTenSanPham() + " " + tenNCC + " " + noiSX).toLowerCase();
             if (thongTin.contains(tuKhoa)) ketQua.add(sp);
         }
         hienThiDanhSach(ketQua);
@@ -190,6 +192,7 @@ public class SanPhamGUI extends JPanel {
             }
         }
 
+        JTextField txtNoiSX = new JTextField(sua ? spCu.getNoiSanXuat() : "", 22);
         JTextField txtGia = new JTextField(sua ? String.valueOf(spCu.getGiaBan()) : "", 22);
         JTextField txtTon = new JTextField(sua ? String.valueOf(spCu.getSoLuongTon()) : "0", 22);
         JTextField txtBaoHanh = new JTextField(sua ? spCu.getThoiHanBaoHanh() : "12 tháng", 22);
@@ -200,11 +203,12 @@ public class SanPhamGUI extends JPanel {
         themDong(form, g, 0, "Mã sản phẩm", txtMa);
         themDong(form, g, 1, "Tên sản phẩm *", txtTen);
         themDong(form, g, 2, "Nhà cung cấp *", cboNCC);
-        themDong(form, g, 3, "Giá bán (VNĐ) *", txtGia);
-        themDong(form, g, 4, "Số lượng tồn *", txtTon);
-        themDong(form, g, 5, "Thời hạn bảo hành *", txtBaoHanh);
-        themDong(form, g, 6, "Mô tả sản phẩm", txtMoTa);
-        themDong(form, g, 7, "Trạng thái", cboTrangThai);
+        themDong(form, g, 3, "Nơi sản xuất", txtNoiSX);
+        themDong(form, g, 4, "Giá bán (VNĐ) *", txtGia);
+        themDong(form, g, 5, "Số lượng tồn *", txtTon);
+        themDong(form, g, 6, "Thời hạn bảo hành *", txtBaoHanh);
+        themDong(form, g, 7, "Mô tả sản phẩm", txtMoTa);
+        themDong(form, g, 8, "Trạng thái", cboTrangThai);
 
         JLabel lblLoi = new JLabel(" ");
         lblLoi.setForeground(Color.RED);
@@ -229,6 +233,7 @@ public class SanPhamGUI extends JPanel {
                         gia,
                         ton,
                         txtBaoHanh.getText().trim(),
+                        txtNoiSX.getText().trim(),
                         txtMoTa.getText().trim(),
                         (TrangThaiSanPham) cboTrangThai.getSelectedItem()
                 );

@@ -1,13 +1,12 @@
 package GUI;
 
+import BUS.BanHangBUS;
 import ENTITY.ChiTietHoaDon;
 import ENTITY.HoaDon;
+import ENTITY.SanPham;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
-import BUS.BanHangBUS;
-
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
@@ -59,6 +58,17 @@ public class HoaDonInGUI extends JDialog {
         setLocationRelativeTo(owner);
     }
 
+    private String layTenNCC(SanPham sp) {
+        if (sp == null || sp.getMaNCC() == null) return "";
+        String thuongHieu = sp.getMaNCC().getTenThuongHieu();
+        if (thuongHieu != null && !thuongHieu.trim().isEmpty()) {
+            return thuongHieu;
+        }
+        return sp.getMaNCC().getTenNCC() != null
+                ? sp.getMaNCC().getTenNCC()
+                : sp.getMaNCC().getMaNCC();
+    }
+
     private String taoNoiDung(HoaDon hd, List<ChiTietHoaDon> ds) {
         StringBuilder sb = new StringBuilder();
         double tongTienHang = 0;
@@ -93,16 +103,20 @@ public class HoaDonInGUI extends JDialog {
                 if (ct == null || ct.getMaSanPham() == null) continue;
 
                 String tenSP = anToan(ct.getMaSanPham().getTenSanPham());
+                String tenNCC = layTenNCC(ct.getMaSanPham());
                 sb.append(String.format("%02d.  ", stt++))
                         .append(catDong(tenSP, DO_RONG - 5).replace("\n", "\n     "))
                         .append("\n");
+                if (!tenNCC.isEmpty()) {
+                    sb.append("     NCC: ").append(tenNCC).append("\n");
+                }
 
                 double tienHang = BanHangBUS.tinhTienHang(ct);
                 double tienThue = BanHangBUS.tinhTienVAT(ct);
                 double thanhTien = BanHangBUS.tinhThanhTien(ct);
                 tongTienHang += tienHang;
                 tongVAT += tienThue;
-                
+
                 String dong = ct.getSoLuong() + " x " + DINH_DANG_TIEN.format(ct.getDonGia());
                 sb.append(canTraiPhai(dong, DINH_DANG_TIEN.format(thanhTien))).append("\n");
                 sb.append("VAT ").append(Math.round(ct.getThueVAT() * 100)).append("%: ")
@@ -120,15 +134,13 @@ public class HoaDonInGUI extends JDialog {
             // Lay truc tiep thong tin khuyen mai da duoc gan va luu trong HoaDon.
             String maKM = anToan(hd.getMaKhuyenMai().getMaKhuyenMai());
             String tenKM = anToan(hd.getMaKhuyenMai().getTenKhuyenMai());
-            double phanTramGiam = Math.max(0,
-                    Math.min(100, hd.getMaKhuyenMai().getGiaTriGiam()));
-            tienGiam = tongTruocGiam * phanTramGiam / 100.0;
+            tienGiam = BanHangBUS.tinhTienGiam(hd.getMaKhuyenMai(), tongTruocGiam);
 
             sb.append("KHUYẾN MÃI ÁP DỤNG\n");
             sb.append("Mã KM: ").append(maKM).append("\n");
             sb.append("Tên KM: ").append(tenKM).append("\n");
             sb.append(canTraiPhai("Mức giảm:",
-                    String.format("%.0f%%", phanTramGiam))).append("\n");
+                    BanHangBUS.moTaMucGiam(hd.getMaKhuyenMai()))).append("\n");
             sb.append(canTraiPhai("Tiền giảm:",
                     DINH_DANG_TIEN.format(tienGiam))).append("\n");
         } else {

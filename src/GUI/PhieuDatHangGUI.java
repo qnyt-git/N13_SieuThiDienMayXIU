@@ -3,6 +3,7 @@ package GUI;
 import BUS.PhieuDatHangBUS;
 import ENTITY.ChiTietPhieuDatHang;
 import ENTITY.PhieuDatHang;
+import ENTITY.SanPham;
 import ENUM.TrangThaiPhieuDatHang;
 
 import javax.swing.*;
@@ -141,6 +142,17 @@ public class PhieuDatHangGUI extends JPanel {
         return null;
     }
 
+    private String layTenNCC(SanPham sp) {
+        if (sp == null || sp.getMaNCC() == null) return "";
+        String thuongHieu = sp.getMaNCC().getTenThuongHieu();
+        if (thuongHieu != null && !thuongHieu.trim().isEmpty()) {
+            return thuongHieu;
+        }
+        return sp.getMaNCC().getTenNCC() != null
+                ? sp.getMaNCC().getTenNCC()
+                : sp.getMaNCC().getMaNCC();
+    }
+
     private void xemChiTiet() {
         PhieuDatHang p = pdhDangChon();
         if (p == null) return;
@@ -149,7 +161,7 @@ public class PhieuDatHangGUI extends JPanel {
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
                 "Chi tiết phiếu đặt hàng: " + p.getMaPhieuDatHang(), Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(620, 380);
+        dialog.setSize(680, 400);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
@@ -162,8 +174,9 @@ public class PhieuDatHangGUI extends JPanel {
         pnlInfo.add(new JLabel("Ghi chú: " + (p.getGhiChu() != null ? p.getGhiChu() : "")));
         pnlInfo.add(new JLabel("Trạng thái: " + pdhBUS.trangThaiText(p)));
 
+        // Bo sung cot Nha cung cap vao bang chi tiet phieu dat hang
         DefaultTableModel modelCT = new DefaultTableModel(
-                new Object[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0
+                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Số lượng", "Đơn giá", "Thành tiền"}, 0
         ) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -173,6 +186,7 @@ public class PhieuDatHangGUI extends JPanel {
             modelCT.addRow(new Object[]{
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getMaSanPham() : "",
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getTenSanPham() : "",
+                    layTenNCC(ct.getMaSanPham()),
                     ct.getSoLuong(),
                     String.format("%,.0f", ct.getDonGia()),
                     String.format("%,.0f VNĐ", thanhTien)

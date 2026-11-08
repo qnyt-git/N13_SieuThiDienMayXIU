@@ -10,13 +10,14 @@ public class SanPham {
 	private double giaBan;
 	private int soLuongTon;
 	private String thoiHanBaoHanh; // 1 năm/12 tháng; 2 năm......
+	private String noiSanXuat; // Nơi sản xuất / Xuất xứ
 	private String moTaSanPham;
 	private TrangThaiSanPham trangThai; // sản phẩm mới/đang bán/hết hàng/tạm ngưng
 	
 	public SanPham() {}
 	
 	public SanPham(String maSanPham, String tenSanPham, NhaCungCap maNCC, double giaBan, int soLuongTon,
-			String thoiHanBaoHanh, String moTaSanPham, TrangThaiSanPham trangThai) {
+			String thoiHanBaoHanh, String noiSanXuat, String moTaSanPham, TrangThaiSanPham trangThai) {
 		super();
 		this.maSanPham = maSanPham;
 		this.tenSanPham = tenSanPham;
@@ -24,6 +25,7 @@ public class SanPham {
 		this.giaBan = giaBan;
 		this.soLuongTon = soLuongTon;
 		this.thoiHanBaoHanh = thoiHanBaoHanh;
+		this.noiSanXuat = noiSanXuat;
 		this.moTaSanPham = moTaSanPham;
 		this.trangThai = trangThai;
 	}
@@ -63,6 +65,12 @@ public class SanPham {
 	public void setThoiHanBaoHanh(String thoiHanBaoHanh) {
 		this.thoiHanBaoHanh = thoiHanBaoHanh;
 	}
+	public String getNoiSanXuat() {
+		return noiSanXuat;
+	}
+	public void setNoiSanXuat(String noiSanXuat) {
+		this.noiSanXuat = noiSanXuat;
+	}
 	public String getMoTaSanPham() {
 		return moTaSanPham;
 	}
@@ -78,10 +86,7 @@ public class SanPham {
 	@Override
 	public String toString() {
 		return "SanPham [maSanPham=" + maSanPham + ", tenSanPham=" + tenSanPham + ", maNCC=" + maNCC + ", giaBan="
-				+ giaBan + ", soLuongTon=" + soLuongTon + ", thoiHanBaoHanh=" + thoiHanBaoHanh + ", moTaSanPham="
-				+ moTaSanPham + ", trangThai=" + trangThai + "]";
+				+ giaBan + ", soLuongTon=" + soLuongTon + ", thoiHanBaoHanh=" + thoiHanBaoHanh + ", noiSanXuat="
+				+ noiSanXuat + ", moTaSanPham=" + moTaSanPham + ", trangThai=" + trangThai + "]";
 	}
-	
-	
-	
 }

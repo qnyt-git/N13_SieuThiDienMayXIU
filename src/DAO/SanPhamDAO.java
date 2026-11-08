@@ -49,6 +49,7 @@ public class SanPhamDAO implements IDAO<SanPham> {
                     rs.getDouble("giaBan"),
                     rs.getInt("soLuongTon"),
                     rs.getString("thoiHanBaoHanh"),
+                    rs.getString("noiSanXuat"),
                     rs.getString("moTaSanPham"),
                     docTrangThai(rs.getString("trangThai"))
                 );
@@ -62,7 +63,7 @@ public class SanPhamDAO implements IDAO<SanPham> {
 
     @Override
     public boolean insert(SanPham sp) {
-        String sql = "INSERT INTO SanPham(maSanPham, tenSanPham, maNCC, giaBan, soLuongTon, thoiHanBaoHanh, moTaSanPham, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO SanPham(maSanPham, tenSanPham, maNCC, giaBan, soLuongTon, thoiHanBaoHanh, noiSanXuat, moTaSanPham, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sp.getMaSanPham());
@@ -71,8 +72,9 @@ public class SanPhamDAO implements IDAO<SanPham> {
             ps.setDouble(4, sp.getGiaBan());
             ps.setInt(5, sp.getSoLuongTon());
             ps.setString(6, sp.getThoiHanBaoHanh());
-            ps.setString(7, sp.getMoTaSanPham());
-            ps.setString(8, sp.getTrangThai() != null ? sp.getTrangThai().name() : TrangThaiSanPham.DANG_BAN.name());
+            ps.setString(7, sp.getNoiSanXuat());
+            ps.setString(8, sp.getMoTaSanPham());
+            ps.setString(9, sp.getTrangThai() != null ? sp.getTrangThai().name() : TrangThaiSanPham.DANG_BAN.name());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -82,7 +84,7 @@ public class SanPhamDAO implements IDAO<SanPham> {
 
     @Override
     public boolean update(SanPham sp) {
-        String sql = "UPDATE SanPham SET tenSanPham = ?, maNCC = ?, giaBan = ?, soLuongTon = ?, thoiHanBaoHanh = ?, moTaSanPham = ?, trangThai = ? WHERE maSanPham = ?";
+        String sql = "UPDATE SanPham SET tenSanPham = ?, maNCC = ?, giaBan = ?, soLuongTon = ?, thoiHanBaoHanh = ?, noiSanXuat = ?, moTaSanPham = ?, trangThai = ? WHERE maSanPham = ?";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sp.getTenSanPham());
@@ -90,9 +92,10 @@ public class SanPhamDAO implements IDAO<SanPham> {
             ps.setDouble(3, sp.getGiaBan());
             ps.setInt(4, sp.getSoLuongTon());
             ps.setString(5, sp.getThoiHanBaoHanh());
-            ps.setString(6, sp.getMoTaSanPham());
-            ps.setString(7, sp.getTrangThai() != null ? sp.getTrangThai().name() : null);
-            ps.setString(8, sp.getMaSanPham());
+            ps.setString(6, sp.getNoiSanXuat());
+            ps.setString(7, sp.getMoTaSanPham());
+            ps.setString(8, sp.getTrangThai() != null ? sp.getTrangThai().name() : null);
+            ps.setString(9, sp.getMaSanPham());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();

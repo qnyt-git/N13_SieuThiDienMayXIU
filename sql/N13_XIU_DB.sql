@@ -84,6 +84,7 @@ CREATE TABLE SanPham (
     maSanPham VARCHAR(20) PRIMARY KEY,
     tenSanPham NVARCHAR(200) NOT NULL,
     maNCC VARCHAR(20) NOT NULL,
+    noiSanXuat NVARCHAR(100) NOT NULL,
     giaBan DECIMAL(18,2) NOT NULL,
     soLuongTon INT NOT NULL,
     thoiHanBaoHanh NVARCHAR(50),
@@ -268,11 +269,11 @@ INSERT INTO KhuyenMai VALUES
 GO
 
 INSERT INTO SanPham VALUES 
-('SP01', N'Tủ lạnh Panasonic Inverter', 'NCC01', 12000000, 15, N'2 năm', N'Tủ lạnh tiết kiệm điện', 'SAN_PHAM_MOI'),
-('SP02', N'Laptop Acer Aspire 5', 'NCC02', 15500000, 10, N'1 năm', N'Laptop văn phòng', 'DANG_BAN'),
-('SP03', N'Tivi Samsung 55 inch', 'NCC03', 18000000, 8, N'2 năm', N'Tivi 4K sắc nét', 'DANG_BAN'),
-('SP04', N'Máy giặt LG Inverter', 'NCC04', 9500000, 12, N'2 năm', N'Máy giặt cửa ngang', 'SAN_PHAM_MOI'),
-('SP05', N'Lò vi sóng Toshiba', 'NCC05', 2500000, 20, N'1 năm', N'Lò vi sóng có nướng', 'HET_HANG');
+('SP01', N'Tủ lạnh Panasonic Inverter', 'NCC01', N'Nhật Bản',12000000, 15, N'2 năm', N'Tủ lạnh tiết kiệm điện', 'SAN_PHAM_MOI'),
+('SP02', N'Laptop Acer Aspire 5', 'NCC02', N'Trung Quốc',15500000, 10, N'1 năm', N'Laptop văn phòng', 'DANG_BAN'),
+('SP03', N'Tivi Samsung 55 inch', 'NCC03', N'Hàn Quốc',18000000, 8, N'2 năm', N'Tivi 4K sắc nét', 'DANG_BAN'),
+('SP04', N'Máy giặt LG Inverter', 'NCC04', N'Việt Nam',9500000, 12, N'2 năm', N'Máy giặt cửa ngang', 'SAN_PHAM_MOI'),
+('SP05', N'Lò vi sóng Toshiba', 'NCC05', N'Trung Quốc',2500000, 20, N'1 năm', N'Lò vi sóng có nướng', 'HET_HANG');
 GO
 
 INSERT INTO TaiKhoanNhanVien VALUES 
