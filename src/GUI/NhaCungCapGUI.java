@@ -193,7 +193,10 @@ public class NhaCungCapGUI extends JPanel {
                     throw new IllegalArgumentException("Vui lòng điền đầy đủ tất cả các trường bắt buộc.");
                 }
                 if (!sdt.matches("0[0-9]{9}")) {
-                    throw new IllegalArgumentException("Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.");
+                    throw new IllegalArgumentException("Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.");
+                }
+                if (!email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                    throw new IllegalArgumentException("Email không đúng định dạng.");
                 }
 
                 NhaCungCap ncc = new NhaCungCap(
