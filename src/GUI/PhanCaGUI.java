@@ -16,6 +16,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import com.toedter.calendar.JDateChooser;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -217,14 +218,16 @@ public class PhanCaGUI extends JPanel {
             }
         }
 
-        JTextField txtNgayLam = new JTextField(sua && pcCu.getNgayLam() != null ? pcCu.getNgayLam().toString() : LocalDate.now().toString(), 22);
+        JDateChooser txtNgayLam = new JDateChooser();
+        txtNgayLam.setDateFormatString("dd/MM/yyyy");
+        txtNgayLam.setDate(sua && pcCu.getNgayLam() != null ? java.sql.Date.valueOf(pcCu.getNgayLam()) : java.sql.Date.valueOf(LocalDate.now()));
         JComboBox<TrangThaiPhanCa> cboTrangThai = new JComboBox<>(TrangThaiPhanCa.values());
         if (sua && pcCu.getTrangThai() != null) cboTrangThai.setSelectedItem(pcCu.getTrangThai());
 
         themDong(form, g, 0, "Mã phân ca", txtMa);
         themDong(form, g, 1, "Nhân viên *", cboNhanVien);
         themDong(form, g, 2, "Ca làm việc *", cboCa);
-        themDong(form, g, 3, "Ngày làm (yyyy-MM-dd) *", txtNgayLam);
+        themDong(form, g, 3, "Ngày làm *", txtNgayLam);
         themDong(form, g, 4, "Trạng thái", cboTrangThai);
 
         JLabel lblLoi = new JLabel(" ");
@@ -235,10 +238,10 @@ public class PhanCaGUI extends JPanel {
 
         btnLuu.addActionListener(e -> {
             try {
-                if (txtNgayLam.getText().trim().isEmpty()) {
-                    throw new IllegalArgumentException("Vui lòng nhập ngày làm.");
+                if (txtNgayLam.getDate() == null) {
+                    throw new IllegalArgumentException("Vui lòng chọn ngày làm.");
                 }
-                LocalDate ngayLam = LocalDate.parse(txtNgayLam.getText().trim());
+                LocalDate ngayLam = new java.sql.Date(txtNgayLam.getDate().getTime()).toLocalDate();
                 NhanVien nv = (NhanVien) cboNhanVien.getSelectedItem();
                 CaLamViec ca = (CaLamViec) cboCa.getSelectedItem();
 
@@ -250,6 +253,21 @@ public class PhanCaGUI extends JPanel {
                         (TrangThaiPhanCa) cboTrangThai.getSelectedItem()
                 );
 
+                if (nv == null || ca == null) {
+                    throw new IllegalArgumentException("Vui lòng chọn nhân viên và ca làm việc.");
+                }
+                for (PhanCa daCo : phanCaDAO.getAll()) {
+                    if (!sua || !daCo.getMaPhanCa().equals(pc.getMaPhanCa())) {
+                        if (daCo.getMaNhanVien() != null && daCo.getMaCa() != null
+                                && daCo.getNgayLam() != null
+                                && daCo.getMaNhanVien().getMaNhanVien().equals(nv.getMaNhanVien())
+                                && daCo.getMaCa().getMaCa().equals(ca.getMaCa())
+                                && daCo.getNgayLam().equals(ngayLam)) {
+                            throw new IllegalArgumentException("Nhân viên đã được phân ca này vào ngày đã chọn.");
+                        }
+                    }
+                }
+
                 boolean thanhCong = sua ? phanCaDAO.update(pc) : phanCaDAO.insert(pc);
                 if (thanhCong) {
                     JOptionPane.showMessageDialog(dialog, sua ? "Cập nhật thành công." : "Thêm mới thành công.");
@@ -258,8 +276,6 @@ public class PhanCaGUI extends JPanel {
                 } else {
                     lblLoi.setText("Lưu thất bại.");
                 }
-            } catch (DateTimeParseException ex) {
-                lblLoi.setText("Ngày làm phải đúng định dạng yyyy-MM-dd.");
             } catch (IllegalArgumentException ex) {
                 lblLoi.setText(ex.getMessage());
             }
