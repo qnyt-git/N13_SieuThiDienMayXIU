@@ -20,6 +20,12 @@ import java.util.Map;
 
 public class PhieuBaoHanhDAO implements IDAO<PhieuBaoHanh> {
 
+    private String lastError = "";
+
+    public String getLastError() {
+        return lastError;
+    }
+
     private static TrangThaiPhieuBaoHanh docTrangThai(String s) {
         String x = s == null ? "" : s.trim();
         for (TrangThaiPhieuBaoHanh t : TrangThaiPhieuBaoHanh.values()) {
@@ -112,6 +118,7 @@ public class PhieuBaoHanhDAO implements IDAO<PhieuBaoHanh> {
             ps.executeBatch();
             return true;
         } catch (Exception e) {
+            lastError = e.getMessage() == null ? e.toString() : e.getMessage();
             e.printStackTrace();
             return false;
         }
@@ -119,6 +126,7 @@ public class PhieuBaoHanhDAO implements IDAO<PhieuBaoHanh> {
 
     /** Thêm phiếu bảo hành kèm theo danh sách chi tiết trong một giao dịch (Transaction) */
     public boolean insertWithDetails(PhieuBaoHanh pbh, List<ChiTietPhieuBaoHanh> chiTietList) {
+        lastError = "";
         Connection con = null;
         String sql = "INSERT INTO PhieuBaoHanh(maPhieuBaoHanh, maKhachHang, maNhanVien, ngayTiepNhan, ngayHenTra, lyDoHuy, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try {
@@ -149,6 +157,7 @@ public class PhieuBaoHanhDAO implements IDAO<PhieuBaoHanh> {
             con.commit();
             return true;
         } catch (Exception e) {
+            lastError = e.getMessage() == null ? e.toString() : e.getMessage();
             e.printStackTrace();
             try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             return false;
@@ -160,6 +169,42 @@ public class PhieuBaoHanhDAO implements IDAO<PhieuBaoHanh> {
     @Override
     public boolean insert(PhieuBaoHanh pbh) {
         return insertWithDetails(pbh, new ArrayList<>());
+    }
+
+    /** Cap nhat thong tin phieu va thay the toan bo chi tiet trong mot transaction. */
+    public boolean updateWithDetails(PhieuBaoHanh pbh, List<ChiTietPhieuBaoHanh> chiTietList) {
+        lastError = "";
+        Connection con = null;
+        String sql = "UPDATE PhieuBaoHanh SET maKhachHang=?, maNhanVien=?, ngayTiepNhan=?, ngayHenTra=?, lyDoHuy=?, trangThai=? WHERE maPhieuBaoHanh=?";
+        try {
+            con = ConnectDB.getConnection();
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, pbh.getMaKhachHang().getMaKhachHang());
+                ps.setString(2, pbh.getMaNhanVien().getMaNhanVien());
+                ps.setTimestamp(3, toTs(pbh.getNgayTiepNhan()));
+                ps.setTimestamp(4, toTs(pbh.getNgayHenTra()));
+                ps.setString(5, pbh.getLyDoHuy());
+                ps.setString(6, pbh.getTrangThai().getMoTa());
+                ps.setString(7, pbh.getMaPhieubaoHanh());
+                if (ps.executeUpdate() == 0) { con.rollback(); return false; }
+            }
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuBaoHanh WHERE maPhieuBaoHanh=?")) {
+                ps.setString(1, pbh.getMaPhieubaoHanh());
+                ps.executeUpdate();
+            }
+            if (chiTietList != null && !chiTietList.isEmpty() && !themChiTietDB(con, pbh, chiTietList)) {
+                con.rollback(); return false;
+            }
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            lastError = e.getMessage() == null ? e.toString() : e.getMessage();
+            try { if (con != null) con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+            return false;
+        } finally {
+            try { if (con != null) con.setAutoCommit(true); } catch (Exception ex) { ex.printStackTrace(); }
+        }
     }
 
     @Override
