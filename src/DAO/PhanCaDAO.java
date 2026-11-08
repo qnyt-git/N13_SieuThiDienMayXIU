@@ -15,8 +15,7 @@
 	import java.util.HashMap;
 	import java.util.List;
 	import java.util.Map;
-	
-	
+
 	public class PhanCaDAO implements IDAO<PhanCa> {
 	
 	    private static TrangThaiPhanCa docTrangThai(String s) {
