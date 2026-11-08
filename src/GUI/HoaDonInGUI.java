@@ -69,6 +69,11 @@ public class HoaDonInGUI extends JDialog {
                 : sp.getMaNCC().getMaNCC();
     }
 
+    private String layNoiSanXuat(SanPham sp) {
+        if (sp == null || sp.getNoiSanXuat() == null) return "";
+        return sp.getNoiSanXuat().trim();
+    }
+
     private String taoNoiDung(HoaDon hd, List<ChiTietHoaDon> ds) {
         StringBuilder sb = new StringBuilder();
         double tongTienHang = 0;
@@ -104,11 +109,16 @@ public class HoaDonInGUI extends JDialog {
 
                 String tenSP = anToan(ct.getMaSanPham().getTenSanPham());
                 String tenNCC = layTenNCC(ct.getMaSanPham());
+                String noiSX = layNoiSanXuat(ct.getMaSanPham());
+
                 sb.append(String.format("%02d.  ", stt++))
                         .append(catDong(tenSP, DO_RONG - 5).replace("\n", "\n     "))
                         .append("\n");
-                if (!tenNCC.isEmpty()) {
-                    sb.append("     NCC: ").append(tenNCC).append("\n");
+
+                if (!tenNCC.isEmpty() || !noiSX.isEmpty()) {
+                    sb.append("     NCC: ").append(tenNCC.isEmpty() ? "-" : tenNCC)
+                            .append(" | Nơi SX: ").append(noiSX.isEmpty() ? "-" : noiSX)
+                            .append("\n");
                 }
 
                 double tienHang = BanHangBUS.tinhTienHang(ct);

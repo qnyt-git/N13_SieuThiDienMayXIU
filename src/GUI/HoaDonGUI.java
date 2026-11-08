@@ -1,5 +1,6 @@
 package GUI;
 
+import BUS.BanHangBUS;
 import DAO.HoaDonDAO;
 import ENTITY.ChiTietHoaDon;
 import ENTITY.HoaDon;
@@ -150,7 +151,7 @@ public class HoaDonGUI extends JPanel {
         List<ChiTietHoaDon> chiTiets = hoaDonDAO.getChiTietByHoaDon(hd);
         
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Chi tiết hóa đơn: " + hd.getMaHoaDon(), Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(680, 420);
+        dialog.setSize(760, 420);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
@@ -164,32 +165,44 @@ public class HoaDonGUI extends JPanel {
         pnlInfo.add(new JLabel("Trạng thái: " + (hd.getTrangThai() != null ? hd.getTrangThai().getMoTa() : "")));
 
         DefaultTableModel modelCT = new DefaultTableModel(
-                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Số lượng", "Đơn giá", "VAT", "Thành tiền"}, 0
+                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Nơi sản xuất", "Số lượng", "Đơn giá", "VAT", "Thành tiền"}, 0
         ) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         double tongTien = 0;
         for (ChiTietHoaDon ct : chiTiets) {
-            double thanhTien = ct.getSoLuong() * ct.getDonGia() * (1 + ct.getThueVAT());
+            double thanhTien = BanHangBUS.tinhThanhTien(ct);
             tongTien += thanhTien;
             String tenNCC = (ct.getMaSanPham() != null && ct.getMaSanPham().getMaNCC() != null)
                     ? ct.getMaSanPham().getMaNCC().getTenThuongHieu()
+                    : "";
+            String noiSX = (ct.getMaSanPham() != null && ct.getMaSanPham().getNoiSanXuat() != null)
+                    ? ct.getMaSanPham().getNoiSanXuat()
                     : "";
             modelCT.addRow(new Object[]{
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getMaSanPham() : "",
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getTenSanPham() : "",
                     tenNCC,
+                    noiSX,
                     ct.getSoLuong(),
                     String.format("%,.0f", ct.getDonGia()),
-                    (int)(ct.getThueVAT() * 100) + "%",
+                    Math.round(ct.getThueVAT() * 100) + "%",
                     String.format("%,.0f VNĐ", thanhTien)
             });
         }
 
+        double tienGiam = BanHangBUS.tinhTienGiam(hd.getMaKhuyenMai(), tongTien);
+        double tongThanhToan = Math.max(0, tongTien - tienGiam);
+
         JTable tblCT = new JTable(modelCT);
         tblCT.setRowHeight(24);
 
-        JLabel lblTong = new JLabel("Tổng tiền hóa đơn: " + String.format("%,.0f VNĐ", tongTien), JLabel.RIGHT);
+        JLabel lblTong = new JLabel(
+                "Tiền hàng (gồm VAT): " + String.format("%,.0f VNĐ", tongTien)
+                + "  |  Giảm giá: " + String.format("%,.0f VNĐ", tienGiam)
+                + "  |  Tổng thanh toán: " + String.format("%,.0f VNĐ", tongThanhToan),
+                JLabel.RIGHT
+        );
         lblTong.setFont(new Font("Arial", Font.BOLD, 14));
         lblTong.setBorder(new EmptyBorder(8, 12, 12, 12));
 

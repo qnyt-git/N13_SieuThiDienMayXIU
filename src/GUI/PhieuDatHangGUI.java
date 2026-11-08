@@ -153,6 +153,11 @@ public class PhieuDatHangGUI extends JPanel {
                 : sp.getMaNCC().getMaNCC();
     }
 
+    private String layNoiSanXuat(SanPham sp) {
+        if (sp == null || sp.getNoiSanXuat() == null) return "";
+        return sp.getNoiSanXuat().trim();
+    }
+
     private void xemChiTiet() {
         PhieuDatHang p = pdhDangChon();
         if (p == null) return;
@@ -161,7 +166,7 @@ public class PhieuDatHangGUI extends JPanel {
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
                 "Chi tiết phiếu đặt hàng: " + p.getMaPhieuDatHang(), Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(680, 400);
+        dialog.setSize(740, 400);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
@@ -174,9 +179,9 @@ public class PhieuDatHangGUI extends JPanel {
         pnlInfo.add(new JLabel("Ghi chú: " + (p.getGhiChu() != null ? p.getGhiChu() : "")));
         pnlInfo.add(new JLabel("Trạng thái: " + pdhBUS.trangThaiText(p)));
 
-        // Bo sung cot Nha cung cap vao bang chi tiet phieu dat hang
+        // Bo sung cot Nha cung cap va Noi san xuat vao bang chi tiet phieu dat hang
         DefaultTableModel modelCT = new DefaultTableModel(
-                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Số lượng", "Đơn giá", "Thành tiền"}, 0
+                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Nơi sản xuất", "Số lượng", "Đơn giá", "Thành tiền"}, 0
         ) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -187,6 +192,7 @@ public class PhieuDatHangGUI extends JPanel {
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getMaSanPham() : "",
                     ct.getMaSanPham() != null ? ct.getMaSanPham().getTenSanPham() : "",
                     layTenNCC(ct.getMaSanPham()),
+                    layNoiSanXuat(ct.getMaSanPham()),
                     ct.getSoLuong(),
                     String.format("%,.0f", ct.getDonGia()),
                     String.format("%,.0f VNĐ", thanhTien)

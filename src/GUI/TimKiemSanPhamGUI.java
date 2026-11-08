@@ -9,6 +9,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +43,7 @@ public class TimKiemSanPhamGUI extends JPanel {
         
         cboLocTrangThai = new JComboBox<>(new String[]{"Tất cả trạng thái", "Sản phẩm mới", "Đang bán", "Hết hàng", "Tạm ngưng"});
         
-        pnlFilter.add(new JLabel("Từ khóa (Mã/Tên):"));
+        pnlFilter.add(new JLabel("Từ khóa (Mã/Tên/NCC/Nơi SX):"));
         pnlFilter.add(txtTuKhoa);
         pnlFilter.add(new JLabel("Trạng thái:"));
         pnlFilter.add(cboLocTrangThai);
@@ -50,7 +52,7 @@ public class TimKiemSanPhamGUI extends JPanel {
         add(top, BorderLayout.NORTH);
 
         modelSP = new DefaultTableModel(new Object[]{
-                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Giá bán (VNĐ)", "Tồn kho", "Bảo hành", "Trạng thái"
+                "Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Nơi sản xuất", "Giá bán (VNĐ)", "Tồn kho", "Bảo hành", "Trạng thái"
         }, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -67,22 +69,32 @@ public class TimKiemSanPhamGUI extends JPanel {
 
         cboLocTrangThai.addActionListener(e -> thucHienTimKiem());
 
+        // Tự động tải lại dữ liệu khi mở màn hình Tìm kiếm sản phẩm
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                taiDuLieu();
+            }
+        });
+
         taiDuLieu();
     }
 
     private void taiDuLieu() {
         danhSachGoc = sanPhamDAO.getAll();
-        hienThiDanhSach(danhSachGoc);
+        thucHienTimKiem();
     }
 
     private void hienThiDanhSach(List<SanPham> list) {
         modelSP.setRowCount(0);
         for (SanPham sp : list) {
             String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
+            String noiSX = (sp.getNoiSanXuat() != null) ? sp.getNoiSanXuat() : "";
             modelSP.addRow(new Object[]{
                     sp.getMaSanPham(),
                     sp.getTenSanPham(),
                     tenNCC,
+                    noiSX,
                     String.format("%,.0f", sp.getGiaBan()),
                     sp.getSoLuongTon(),
                     sp.getThoiHanBaoHanh(),
@@ -98,7 +110,8 @@ public class TimKiemSanPhamGUI extends JPanel {
         List<SanPham> ketQua = new ArrayList<>();
         for (SanPham sp : danhSachGoc) {
             String tenNCC = (sp.getMaNCC() != null) ? sp.getMaNCC().getTenNCC() : "";
-            String thongTin = (sp.getMaSanPham() + " " + sp.getTenSanPham() + " " + tenNCC).toLowerCase();
+            String noiSX = (sp.getNoiSanXuat() != null) ? sp.getNoiSanXuat() : "";
+            String thongTin = (sp.getMaSanPham() + " " + sp.getTenSanPham() + " " + tenNCC + " " + noiSX).toLowerCase();
             
             boolean thoaManTuKhoa = thongTin.contains(tuKhoa);
             boolean thoaManTrangThai = trangThaiChon.equals("Tất cả trạng thái") || 

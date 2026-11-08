@@ -188,6 +188,14 @@ public class BanHangGUI extends JPanel {
                 : sp.getMaNCC().getMaNCC();
     }
 
+    /**
+     * Lay noi san xuat tu doi tuong SanPham.
+     */
+    private String layNoiSanXuat(SanPham sp) {
+        if (sp == null || sp.getNoiSanXuat() == null) return "";
+        return sp.getNoiSanXuat().trim();
+    }
+
     // ==================== TAB 1: KHOI TAO GIAO DIEN BAN HANG ====================
 
     private JPanel taoTabBanHang() {
@@ -226,12 +234,13 @@ public class BanHangGUI extends JPanel {
 
         panelTrai.add(panelTimKiem, BorderLayout.NORTH);
 
-        // Bang san pham (Bo sung cot Nha cung cap)
+        // Bang san pham (Bo sung cot Nha cung cap va Noi san xuat)
         modelSanPham = new DefaultTableModel(
                 new Object[]{
                     "Mã SP",
                     "Tên sản phẩm",
                     "Nhà cung cấp",
+                    "Nơi sản xuất",
                     "Giá bán",
                     "Tồn kho"
                 }, 0
@@ -297,12 +306,13 @@ public class BanHangGUI extends JPanel {
 
         panelPhai.add(lblTieuDeGH, BorderLayout.NORTH);
 
-        // Bang gio hang (Bo sung cot Nha cung cap)
+        // Bang gio hang (Bo sung cot Nha cung cap va Noi san xuat)
         modelGioHang = new DefaultTableModel(
                 new Object[]{
                     "Mã SP",
                     "Tên sản phẩm",
                     "Nhà cung cấp",
+                    "Nơi sản xuất",
                     "Đơn giá",
                     "Số lượng",
                     "Thành tiền"
@@ -583,9 +593,9 @@ public class BanHangGUI extends JPanel {
         panelTimKiem.add(btnTimDat);
         panelTrai.add(panelTimKiem, BorderLayout.NORTH);
 
-        // Bang san pham dat hang (Bo sung cot Nha cung cap)
+        // Bang san pham dat hang (Bo sung cot Nha cung cap va Noi san xuat)
         modelSanPhamDat = new DefaultTableModel(
-                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Giá bán", "Tồn kho"}, 0
+                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Nơi sản xuất", "Giá bán", "Tồn kho"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -624,9 +634,9 @@ public class BanHangGUI extends JPanel {
         lblTieuDe.setForeground(new Color(20, 40, 70));
         panelPhai.add(lblTieuDe, BorderLayout.NORTH);
 
-        // Bang gio dat hang (Bo sung cot Nha cung cap)
+        // Bang gio dat hang (Bo sung cot Nha cung cap va Noi san xuat)
         modelGioHangDat = new DefaultTableModel(
-                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Đơn giá", "Số lượng", "Thành tiền"}, 0
+                new Object[]{"Mã SP", "Tên sản phẩm", "Nhà cung cấp", "Nơi sản xuất", "Đơn giá", "Số lượng", "Thành tiền"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -889,6 +899,7 @@ public class BanHangGUI extends JPanel {
                 sp.getMaSanPham(),
                 sp.getTenSanPham(),
                 layTenNCC(sp),
+                layNoiSanXuat(sp),
                 String.format("%,.0f", sp.getGiaBan()),
                 sp.getSoLuongTon()
             });
@@ -904,6 +915,7 @@ public class BanHangGUI extends JPanel {
                 sp.getMaSanPham(),
                 sp.getTenSanPham(),
                 layTenNCC(sp),
+                layNoiSanXuat(sp),
                 String.format("%,.0f", sp.getGiaBan()),
                 sp.getSoLuongTon()
             });
@@ -913,20 +925,42 @@ public class BanHangGUI extends JPanel {
     // ==================== TIM KIEM SAN PHAM ====================
 
     private void timKiemSanPham() {
-        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
-        danhSachSanPhamHienThi = new ArrayList<>();
-        for (SanPham sp : danhSachSanPham) {
-            if (sp == null) continue;
-            String maSP = sp.getMaSanPham() == null ? "" : sp.getMaSanPham().toLowerCase();
-            String tenSP = sp.getTenSanPham() == null ? "" : sp.getTenSanPham().toLowerCase();
-            String tenNCC = layTenNCC(sp).toLowerCase();
-            String noiSX = sp.getNoiSanXuat() == null ? "" : sp.getNoiSanXuat().toLowerCase();
 
-            if (maSP.contains(tuKhoa) || tenSP.contains(tuKhoa) || tenNCC.contains(tuKhoa) || noiSX.contains(tuKhoa)) {
+        String tuKhoa = txtTimKiem.getText()
+                .trim()
+                .toLowerCase();
+
+        danhSachSanPhamHienThi = new ArrayList<>();
+
+        for (SanPham sp : danhSachSanPham) {
+
+            if (sp == null) {
+                continue;
+            }
+
+            String maSP = sp.getMaSanPham() == null
+                    ? ""
+                    : sp.getMaSanPham().toLowerCase();
+
+            String tenSP = sp.getTenSanPham() == null
+                    ? ""
+                    : sp.getTenSanPham().toLowerCase();
+
+            String tenNCC = layTenNCC(sp).toLowerCase();
+            String noiSX = layNoiSanXuat(sp).toLowerCase();
+
+            if (maSP.contains(tuKhoa)
+                    || tenSP.contains(tuKhoa)
+                    || tenNCC.contains(tuKhoa)
+                    || noiSX.contains(tuKhoa)) {
+
                 danhSachSanPhamHienThi.add(sp);
             }
         }
-        hienThiDanhSachSanPham(danhSachSanPhamHienThi);
+
+        hienThiDanhSachSanPham(
+                danhSachSanPhamHienThi
+        );
     }
 
     private void timKiemSanPhamDat() {
@@ -937,7 +971,8 @@ public class BanHangGUI extends JPanel {
             String maSP = sp.getMaSanPham() == null ? "" : sp.getMaSanPham().toLowerCase();
             String tenSP = sp.getTenSanPham() == null ? "" : sp.getTenSanPham().toLowerCase();
             String tenNCC = layTenNCC(sp).toLowerCase();
-            if (maSP.contains(tuKhoa) || tenSP.contains(tuKhoa) || tenNCC.contains(tuKhoa)) {
+            String noiSX = layNoiSanXuat(sp).toLowerCase();
+            if (maSP.contains(tuKhoa) || tenSP.contains(tuKhoa) || tenNCC.contains(tuKhoa) || noiSX.contains(tuKhoa)) {
                 danhSachSanPhamDatHienThi.add(sp);
             }
         }
@@ -1098,6 +1133,7 @@ public class BanHangGUI extends JPanel {
                 ct.getMaSanPham().getMaSanPham(),
                 ct.getMaSanPham().getTenSanPham(),
                 layTenNCC(ct.getMaSanPham()),
+                layNoiSanXuat(ct.getMaSanPham()),
                 String.format("%,.0f", ct.getDonGia()),
                 ct.getSoLuong(),
                 String.format("%,.0f", thanhTien)
@@ -1423,6 +1459,7 @@ public class BanHangGUI extends JPanel {
                 ct.getMaSanPham().getMaSanPham(),
                 ct.getMaSanPham().getTenSanPham(),
                 layTenNCC(ct.getMaSanPham()),
+                layNoiSanXuat(ct.getMaSanPham()),
                 String.format("%,.0f", ct.getDonGia()),
                 ct.getSoLuong(),
                 String.format("%,.0f", thanhTien)
