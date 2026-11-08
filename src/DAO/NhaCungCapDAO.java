@@ -9,7 +9,11 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * DAO của NhaCungCap.
+ * Bao gồm các thao tác CSDL chuẩn (insert, update, delete, getAll, taoMaMoi)
+ * và toàn bộ các phương thức xử lý nghiệp vụ được chuyển từ Entity qua.
+ */
 public class NhaCungCapDAO implements IDAO<NhaCungCap> {
 
     @Override
