@@ -12,6 +12,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import com.toedter.calendar.JDateChooser;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -163,16 +164,20 @@ public class KhuyenMaiGUI extends JPanel {
         JTextField txtMa = new JTextField(sua ? kmCu.getMaKhuyenMai() : khuyenMaiDAO.taoMaMoi(), 22);
         txtMa.setEditable(false);
         JTextField txtTen = new JTextField(sua ? kmCu.getTenKhuyenMai() : "", 22);
-        JTextField txtBatDau = new JTextField(sua && kmCu.getThoiGianBatDau() != null ? kmCu.getThoiGianBatDau().toLocalDate().toString() : LocalDate.now().toString(), 22);
-        JTextField txtKetThuc = new JTextField(sua && kmCu.getThoiGianKetThuc() != null ? kmCu.getThoiGianKetThuc().toLocalDate().toString() : LocalDate.now().plusDays(7).toString(), 22);
+        JDateChooser txtBatDau = new JDateChooser();
+        txtBatDau.setDateFormatString("dd/MM/yyyy");
+        txtBatDau.setDate(sua && kmCu.getThoiGianBatDau() != null ? java.sql.Date.valueOf(kmCu.getThoiGianBatDau().toLocalDate()) : java.sql.Date.valueOf(LocalDate.now()));
+        JDateChooser txtKetThuc = new JDateChooser();
+        txtKetThuc.setDateFormatString("dd/MM/yyyy");
+        txtKetThuc.setDate(sua && kmCu.getThoiGianKetThuc() != null ? java.sql.Date.valueOf(kmCu.getThoiGianKetThuc().toLocalDate()) : java.sql.Date.valueOf(LocalDate.now().plusDays(7)));
         JTextField txtGiaTri = new JTextField(sua ? String.valueOf(kmCu.getGiaTriGiam()) : "", 22);
         JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Đang diễn ra", "Đã kết thúc"});
         cboTrangThai.setSelectedItem(sua && kmCu.isTrangThai() ? "Đang diễn ra" : "Đã kết thúc");
 
         themDong(form, g, 0, "Mã khuyến mãi", txtMa);
         themDong(form, g, 1, "Tên khuyến mãi *", txtTen);
-        themDong(form, g, 2, "Ngày bắt đầu (yyyy-MM-dd) *", txtBatDau);
-        themDong(form, g, 3, "Ngày kết thúc (yyyy-MM-dd) *", txtKetThuc);
+        themDong(form, g, 2, "Ngày bắt đầu *", txtBatDau);
+        themDong(form, g, 3, "Ngày kết thúc *", txtKetThuc);
         themDong(form, g, 4, "Giá trị giảm *", txtGiaTri);
         themDong(form, g, 5, "Trạng thái", cboTrangThai);
 
@@ -185,11 +190,12 @@ public class KhuyenMaiGUI extends JPanel {
         btnLuu.addActionListener(e -> {
             try {
                 String ten = txtTen.getText().trim();
-                if (ten.isEmpty() || txtBatDau.getText().trim().isEmpty() || txtKetThuc.getText().trim().isEmpty() || txtGiaTri.getText().trim().isEmpty()) {
+                if (ten.isEmpty() || txtBatDau.getDate() == null || txtKetThuc.getDate() == null || txtGiaTri.getText().trim().isEmpty()) {
                     throw new IllegalArgumentException("Vui lòng điền đầy đủ các thông tin bắt buộc.");
                 }
-                LocalDate bd = LocalDate.parse(txtBatDau.getText().trim());
-                LocalDate kt = LocalDate.parse(txtKetThuc.getText().trim());
+                LocalDate bd = new java.sql.Date(txtBatDau.getDate().getTime()).toLocalDate();
+                LocalDate kt = new java.sql.Date(txtKetThuc.getDate().getTime()).toLocalDate();
+                if (kt.isBefore(bd)) throw new IllegalArgumentException("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
                 double giaTri = Double.parseDouble(txtGiaTri.getText().trim());
 
                 KhuyenMai km = new KhuyenMai();
@@ -207,8 +213,6 @@ public class KhuyenMaiGUI extends JPanel {
                 } else {
                     lblLoi.setText("Lưu thất bại.");
                 }
-            } catch (DateTimeParseException ex) {
-                lblLoi.setText("Định dạng ngày phải là yyyy-MM-dd.");
             } catch (NumberFormatException ex) {
                 lblLoi.setText("Giá trị giảm phải là số hợp lệ.");
             } catch (IllegalArgumentException ex) {
