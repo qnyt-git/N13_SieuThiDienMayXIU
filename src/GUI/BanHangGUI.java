@@ -268,7 +268,7 @@ public class BanHangGUI extends JPanel {
         spnSoLuong.setPreferredSize(new Dimension(70, 34));
 
         JButton btnThemVaoGH = taoNut(
-                "Thêm vào giỏ hàng ➔",
+                "Thêm vào giỏ hàng",
                 new Color(14, 98, 195),
                 Color.WHITE
         );
